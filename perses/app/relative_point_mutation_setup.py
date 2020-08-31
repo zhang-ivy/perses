@@ -95,12 +95,13 @@ class PointMutationExecutor(object):
                  ionic_strength=0.15 * unit.molar,
                  forcefield_files=['amber14/protein.ff14SB.xml', 'amber14/tip3p.xml'],
                  barostat=openmm.MonteCarloBarostat(1.0 * unit.atmosphere, temperature, 50),
-                 forcefield_kwargs={'removeCMMotion': False, 'ewaldErrorTolerance': 0.00025, 'constraints' : app.HBonds, 'hydrogenMass' : 4 * unit.amus},
+                 forcefield_kwargs={'removeCMMotion': False, 'ewaldErrorTolerance': 0.00025, 'constraints': app.HBonds, 'hydrogenMass' : 4 * unit.amus},
                  periodic_forcefield_kwargs={'nonbondedMethod': app.PME},
                  nonperiodic_forcefield_kwargs=None,
                  small_molecule_forcefields='gaff-2.11',
                  complex_box_dimensions=None,
                  apo_box_dimensions=None,
+                 remove_constraints=False,
                  **kwargs):
         """
         arguments
@@ -130,7 +131,7 @@ class PointMutationExecutor(object):
                 forcefield files for proteins and solvent
             barostat : openmm.MonteCarloBarostat, default openmm.MonteCarloBarostat(1.0 * unit.atmosphere, 300 * unit.kelvin, 50)
                 barostat to use
-            forcefield_kwargs : dict, default {'removeCMMotion': False, 'ewaldErrorTolerance': 1e-4, 'constraints' : app.HBonds, 'hydrogenMass' : 4 * unit.amus}
+            forcefield_kwargs : dict, default {'removeCMMotion': False, 'ewaldErrorTolerance': 0.00025, 'constraints' : app.HBonds, 'hydrogenMass' : 4 * unit.amus}
                 forcefield kwargs for system parametrization
             periodic_forcefield_kwargs : dict, default {'nonbondedMethod': app.PME}
                 periodic forcefield kwargs for system parametrization
@@ -144,6 +145,9 @@ class PointMutationExecutor(object):
             apo_box_dimensions :  Vec3, default None
                 define box dimensions of apo phase phase;
                 if None, padding is 1nm
+            remove_constraints :
+                if hydrogen constraints should be constrained in the simulation
+                default is False, so no constraints removed, but 'all' or 'not water' can be used to remove constraints.
 
         TODO : allow argument for spectator ligands besides the 'ligand_file'
 
@@ -186,6 +190,21 @@ class PointMutationExecutor(object):
             complex_positions = unit.Quantity(np.zeros([protein_n_atoms + ligand_n_atoms, 3]), unit=unit.nanometers)
             complex_positions[:protein_n_atoms, :] = protein_positions
             complex_positions[protein_n_atoms:, :] = ligand_positions
+
+        #
+        if not remove_constraints:
+            pass
+        elif remove_constraints == 'all':
+            _logger.info(f'Hydrogens will not be constrained. This may be problematic if using a larger timestep')
+            forcefield_kwargs = {'removeCMMotion': False, 'ewaldErrorTolerance': 0.00025, 'rigidWater': False,
+                                 'hydrogenMass': 4 * unit.amus}
+        elif remove_constraints == 'not water':
+            _logger.info(
+                f'Hydrogens will not be constrained for non-water molecules. This may be problematic if using a larger timestep')
+            forcefield_kwargs = {'removeCMMotion': False, 'ewaldErrorTolerance': 0.00025, 'hydrogenMass': 4 * unit.amus}
+        else:
+            _logger.warning(
+                f"remove_constraints value of {remove_constraints}. Allowed values are False, 'all', or 'not water'")
 
         # Now for a system_generator
         self.system_generator = SystemGenerator(forcefields=forcefield_files,
