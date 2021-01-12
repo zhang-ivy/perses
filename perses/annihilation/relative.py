@@ -1383,8 +1383,14 @@ class HybridTopologyFactory(object):
         self._hybrid_system_forces['standard_nonbonded_force'].addGlobalParameter("electrostatic_scale", 0.0)
         self._hybrid_system_forces['standard_nonbonded_force'].addGlobalParameter("electrostatic_core_scale1", 0.0)
         self._hybrid_system_forces['standard_nonbonded_force'].addGlobalParameter("electrostatic_core_scale2", 0.0)
+        self._hybrid_system_forces['standard_nonbonded_force'].addGlobalParameter("steric_core_scale2", 0.0)
         self._hybrid_system_forces['standard_nonbonded_force'].addGlobalParameter("electrostatic_insert_scale", 0.0)
         self._hybrid_system_forces['standard_nonbonded_force'].addGlobalParameter("electrostatic_delete_scale", 0.0)
+
+        #offset global params
+        self._hybrid_system_forces['standard_nonbonded_force'].addGlobalParameter("electrostatic_offset_core_scale2", 0.0)
+        self._hybrid_system_forces['standard_nonbonded_force'].addGlobalParameter("steric_offset_core_scale2", 0.0)
+
 
         #We have to loop through the particles in the system, because nonbonded force does not accept index
         _logger.info("\thandle_nonbonded: looping through all particles in hybrid...")
@@ -1615,16 +1621,6 @@ class HybridTopologyFactory(object):
                 self._hybrid_system_forces['core_sterics_force'].addExclusion(atom_pair[0], atom_pair[1]) # add exclusion to ensure exceptions are consistent
 
             #If it's not handled by an exception in the original system, we just add the regular parameters as an exception
-            # TODO: this implies that the old-old nonbonded interactions (those which are not exceptions) are always self-interacting throughout lambda protocol...
-            # else:
-            #     _logger.info(f"\t\thandle_nonbonded: _handle_hybrid_exceptions: {old_index_atom_pair} is NOT an old exception...perhaps this is a problem!")
-            #     [charge0, sigma0, epsilon0] = self._old_system_forces['NonbondedForce'].getParticleParameters(old_index_atom_pair[0])
-            #     [charge1, sigma1, epsilon1] = self._old_system_forces['NonbondedForce'].getParticleParameters(old_index_atom_pair[1])
-            #     chargeProd = charge0*charge1
-            #     epsilon = unit.sqrt(epsilon0*epsilon1)
-            #     sigma = 0.5*(sigma0+sigma1)
-            #     self._hybrid_system_forces['standard_nonbonded_force'].addException(atom_pair[0], atom_pair[1], chargeProd, sigma, epsilon)
-            #     self._hybrid_system_forces['core_sterics_force'].addExclusion(atom_pair[0], atom_pair[1]) # add exclusion to ensure exceptions are consistent
 
         #add back the interactions of the new unique atoms, unless there are exceptions
         for atom_pair in unique_new_pairs:
@@ -1660,15 +1656,6 @@ class HybridTopologyFactory(object):
 
 
             #If it's not handled by an exception in the original system, we just add the regular parameters as an exception
-            # else:
-            #     _logger.info(f"\t\thandle_nonbonded: _handle_hybrid_exceptions: {new_index_atom_pair} is NOT a new exception...perhaps this is a problem!")
-            #     [charge0, sigma0, epsilon0] = self._new_system_forces['NonbondedForce'].getParticleParameters(new_index_atom_pair[0])
-            #     [charge1, sigma1, epsilon1] = self._new_system_forces['NonbondedForce'].getParticleParameters(new_index_atom_pair[1])
-            #     chargeProd = charge0*charge1
-            #     epsilon = unit.sqrt(epsilon0*epsilon1)
-            #     sigma = 0.5*(sigma0+sigma1)
-            #     self._hybrid_system_forces['standard_nonbonded_force'].addException(atom_pair[0], atom_pair[1], chargeProd, sigma, epsilon)
-            #     self._hybrid_system_forces['core_sterics_force'].addExclusion(atom_pair[0], atom_pair[1]) # add exclusion to ensure exceptions are consistent
 
     def _handle_original_exceptions(self):
         """
@@ -1748,6 +1735,25 @@ class HybridTopologyFactory(object):
                 self._hybrid_system_forces['standard_nonbonded_force'].addExceptionParameterOffset('lambda_sterics_core', exception_index, 0, (sigma_new - sigma_old), (epsilon_new - epsilon_old))
                 self._hybrid_system_forces['core_sterics_force'].addExclusion(index1_hybrid, index2_hybrid)
 
+                if identifier==0: #solute
+                    #term beta 1
+                    self._hybrid_system_forces['standard_nonbonded_force'].addExceptionParameterOffset('steric_scale', exception_index, chargeProd_old, 0, 0)
+                    self._hybrid_system_forces['standard_nonbonded_force'].addExceptionParameterOffset('steric_scale', exception_index, 0, 0, epsilon_old)
+
+                    #term beta 2
+                    self._hybrid_system_forces['standard_nonbonded_force'].addExceptionParameterOffset('electrostatic_offset_core_scale2', exception_index, (chargeProd_new - chargeProd_old), 0, 0)
+                    self._hybrid_system_forces['standard_nonbonded_force'].addExceptionParameterOffset('steric_offset_core_scale2', exception_index, 0, 0, (epsilon_new - epsilon_old))
+                elif identifier == 2: #inter
+                    self._hybrid_system_forces['standard_nonbonded_force'].addExceptionParameterOffset('electrostatic_scale', exception_index, chargeProd_old, 0, 0)
+                    self._hybrid_system_forces['standard_nonbonded_force'].addExceptionParameterOffset('electrostatic_scale', exception_index, 0, 0, epsilon_old)
+
+                    self._hybrid_system_forces['standard_nonbonded_force'].addExceptionParameterOffset('electrostatic_core_scale2', exception_index, (chargeProd_new - chargeProd_old), 0, 0)
+                    self._hybrid_system_forces['standard_nonbonded_force'].addExceptionParameterOffset('steric_core_scale2', exception_index, 0, 0, (epsilon_new - epsilon_old))
+
+
+
+
+
         #now, loop through the new system to collect remaining interactions. The only that remain here are
         #uniquenew-uniquenew, uniquenew-core, and uniquenew-environment. There might also be core-core, since not all
         #core-core exceptions exist in both
@@ -1826,7 +1832,7 @@ class HybridTopologyFactory(object):
         """
         from openmmtools.constants import ONE_4PI_EPS0 # OpenMM constant for Coulomb interactions (implicitly in md_unit_system units)
 
-        old_new_nonbonded_exceptions = "U_electrostatics + U_sterics;"
+        old_new_nonbonded_exceptions = "scale_factor*(U_electrostatics + U_sterics)*select();"
 
         if self._softcore_LJ_v2:
             old_new_nonbonded_exceptions += "U_sterics = select(step(r - r_LJ), 4*epsilon*x*(x-1.0), U_sterics_quad);"
@@ -1850,6 +1856,7 @@ class HybridTopologyFactory(object):
 
         old_new_nonbonded_exceptions += "lambda_sterics = new_interaction*lambda_sterics_insert + old_interaction*lambda_sterics_delete;"
         old_new_nonbonded_exceptions += "new_interaction = delta(1-unique_new); old_interaction = delta(1-unique_old);"
+        old_new_nonbonded_exceptions += self.scaling_expression()
 
 
         nonbonded_exceptions_force = openmm.CustomBondForce(old_new_nonbonded_exceptions)
@@ -1867,8 +1874,10 @@ class HybridTopologyFactory(object):
         nonbonded_exceptions_force.addGlobalParameter("lambda_electrostatics_delete", 0.0) # electrostatics
         nonbonded_exceptions_force.addGlobalParameter("lambda_sterics_insert", 0.0) # sterics insert
         nonbonded_exceptions_force.addGlobalParameter("lambda_sterics_delete", 0.0) # sterics delete
+        nonbonded_exceptions_force.addGlobalParameter("solute_scale", 1.0)
+        nonbonded_exceptions_force.addGlobalParameter("inter_scale", 1.0)
 
-        for parameter in ['chargeProd','sigmaA', 'epsilonA', 'sigmaB', 'epsilonB', 'unique_old', 'unique_new']:
+        for parameter in ['chargeProd','sigmaA', 'epsilonA', 'sigmaB', 'epsilonB', 'unique_old', 'unique_new', 'identifier']:
             nonbonded_exceptions_force.addPerBondParameter(parameter)
 
         #prepare for exceptions loop by grabbing nonbonded forces, hybrid_to_old/new maps
@@ -1887,13 +1896,14 @@ class HybridTopologyFactory(object):
             index1_hybrid = self._old_to_hybrid_map[index1_old]
             index2_hybrid = self._old_to_hybrid_map[index2_old]
             index_set = {index1_hybrid, index2_hybrid}
+            identifier = self.get_identifier(list(index_set))
 
             #otherwise, check if one of the atoms in the set is in the unique_old_group and the other is not:
             if len(index_set.intersection(self._atom_classes['unique_old_atoms'])) > 0 and (chargeProd_old.value_in_unit_system(unit.md_unit_system) != 0.0 or epsilon_old.value_in_unit_system(unit.md_unit_system) != 0.0):
                 _logger.debug(f"\t\thandle_old_new_exceptions: {exception_pair} is a unique_old exception pair.")
                 if self._interpolate_14s:
                     # if we are interpolating 1,4s, then we anneal this term off; otherwise, the exception force is constant and already handled in the standard nonbonded force
-                    nonbonded_exceptions_force.addBond(index1_hybrid, index2_hybrid, [chargeProd_old, sigma_old, epsilon_old, sigma_old, epsilon_old*0.0, 1, 0])
+                    nonbonded_exceptions_force.addBond(index1_hybrid, index2_hybrid, [chargeProd_old, sigma_old, epsilon_old, sigma_old, epsilon_old*0.0, 1, 0, identifier])
 
 
 
@@ -1907,6 +1917,7 @@ class HybridTopologyFactory(object):
             index2_hybrid = self._new_to_hybrid_map[index2_new]
 
             index_set = {index1_hybrid, index2_hybrid}
+            identifier = self.get_identifier(list(index_set))
 
             #look for the final class- interactions between uniquenew-core and uniquenew-environment. They are treated
             #similarly: they are simply on and constant the entire time (as a valence term)
@@ -1914,7 +1925,7 @@ class HybridTopologyFactory(object):
                 _logger.debug(f"\t\thandle_old_new_exceptions: {exception_pair} is a unique_new exception pair.")
                 if self._interpolate_14s:
                     # if we are interpolating 1,4s, then we anneal this term on; otherwise, the exception force is constant and already handled in the standard nonbonded force
-                    nonbonded_exceptions_force.addBond(index1_hybrid, index2_hybrid, [chargeProd_new, sigma_new, epsilon_new*0.0, sigma_new, epsilon_new, 0, 1])
+                    nonbonded_exceptions_force.addBond(index1_hybrid, index2_hybrid, [chargeProd_new, sigma_new, epsilon_new*0.0, sigma_new, epsilon_new, 0, 1, identifier])
 
 
     def _find_exception(self, force, index1, index2):
