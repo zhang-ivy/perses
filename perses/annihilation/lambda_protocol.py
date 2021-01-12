@@ -258,7 +258,7 @@ class RelativeAlchemicalState(AlchemicalState):
 
 # REST Protocol!
 class RESTProtocol(object):
-        lambda_default_functions = {'lambda_sterics_core':
+    lambda_default_functions = {'lambda_sterics_core':
                              lambda x, beta0, beta: x,
                              'lambda_electrostatics_core':
                              lambda x, beta0, beta: x,
