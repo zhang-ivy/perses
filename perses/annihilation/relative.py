@@ -1453,8 +1453,8 @@ class HybridTopologyFactory(object):
                 # TODO: We could also interpolate the Lennard-Jones here instead of core_sterics force so that core_sterics_force could just be softcore
                 # interpolate between old and new charge with lambda_electrostatics core; make sure to keep sterics off
                 self._hybrid_system_forces['standard_nonbonded_force'].addParticleParameterOffset('lambda_electrostatics_core', particle_index, (charge_new - charge_old), 0, 0)
-                self._hybrid_system_forces['standard_nonbonded_force'].addParticleParameterOffset('electrostatic_core_scale1', particle_index, charge_old, 0*sigma, 0*epsilon)
-                self._hybrid_system_forces['standard_nonbonded_force'].addParticleParameterOffset('electrostatic_core_scale2', particle_index, (charge_new - charge_old), 0*sigma, 0*epsilon)
+                self._hybrid_system_forces['standard_nonbonded_force'].addParticleParameterOffset('electrostatic_core_scale1', particle_index, charge_old, 0, 0)
+                self._hybrid_system_forces['standard_nonbonded_force'].addParticleParameterOffset('electrostatic_core_scale2', particle_index, (charge_new - charge_old), 0, 0)
 
             #otherwise, the particle is in the environment
             else:
