@@ -1468,8 +1468,11 @@ class HybridTopologyFactory(object):
 
                 #add the environment atoms to the regular nonbonded force as well: should we be adding steric terms here, too?
                 self._hybrid_system_forces['standard_nonbonded_force'].addParticle(charge, sigma, epsilon)
-                self._hybrid_system_forces['standard_nonbonded_force'].addParticleParameterOffset('electrostatics_core', particle_index, charge, 0, 0)
-                self._hybrid_system_forces['standard_nonbonded_force'].addParticleParameterOffset('steric_core', particle_index, charge*0., 0, epsilon)
+                if identifier==1: #solvent
+                    pass
+                else: #solute
+                    self._hybrid_system_forces['standard_nonbonded_force'].addParticleParameterOffset('electrostatic_scale', particle_index, charge, 0, 0)
+                    self._hybrid_system_forces['standard_nonbonded_force'].addParticleParameterOffset('steric_scale', particle_index, charge*0., 0, epsilon)
 
 
 
