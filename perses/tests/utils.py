@@ -383,12 +383,20 @@ def generate_endpoint_thermodynamic_states(system: openmm.System, topology_propo
     #create the thermodynamic state
     from perses.annihilation.lambda_protocol import RelativeAlchemicalState
 
-    lambda_zero_alchemical_state = RelativeAlchemicalState.from_system(system)
+#    lambda_zero_alchemical_state = RelativeAlchemicalState.from_system(system)
+ #   lambda_one_alchemical_state = copy.deepcopy(lambda_zero_alchemical_state)
+    
+    from perses.annihilation.lambda_protocol import RESTStateV2
+    lambda_zero_alchemical_state = RESTStateV2.from_system(system)
     lambda_one_alchemical_state = copy.deepcopy(lambda_zero_alchemical_state)
-
+  
     #ensure their states are set appropriately
-    lambda_zero_alchemical_state.set_alchemical_parameters(0.0)
-    lambda_one_alchemical_state.set_alchemical_parameters(1.0)
+    #lambda_zero_alchemical_state.set_alchemical_parameters(0.0)
+    #lambda_one_alchemical_state.set_alchemical_parameters(1.0)
+    beta_0 = 1/(kB*temperature)
+    beta_m = 1/(kB*temperature)
+    lambda_zero_alchemical_state.set_alchemical_parameters(beta_0, beta_m)
+    lambda_one_alchemical_state.set_alchemical_parameters(beta_0, beta_m)
 
     check_system(system)
 
