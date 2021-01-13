@@ -288,12 +288,12 @@ class RESTProtocolV2(object):
                          'inter_scale' : lambda x, beta0, beta : np.sqrt(beta / beta0),
                          'steric_scale' : lambda x, beta0, beta : beta / beta0 - 1,
                          'electrostatic_scale' : lambda x, beta0, beta : np.sqrt(beta / beta0) - 1,
-                         'electrostatic_insert_scale' : lambda x, beta, beta0 : RESTProtocol.lambda_default_functions['lambda_electrostatics_insert'](x, beta, beta0)*(np.sqrt(beta/beta0) - 1.),
-                         'electrostatic_delete_scale' : lambda x, beta, beta0 : (1. - RESTProtocol.lambda_default_functions['lambda_electrostatics_delete'](x, beta, beta0))*(beta/beta0 - 1.),
-                         'electrostatic_core_scale1' : lambda x, beta, beta0 : np.sqrt(beta/beta0) - 1,
-                         'electrostatic_core_scale2' : lambda x, beta, beta0 : RESTProtocol.lambda_default_functions['lambda_electrostatics_core'](x, beta, beta0)*(np.sqrt(beta/beta0) - 1.),
-                         'electrostatic_offset_core_scale1' : lambda x, beta, beta0 : np.sqrt(beta/beta0) - 1,
-                         'electrostatic_offset_core_scale2' : lambda x, beta, beta0 : RESTProtocol.lambda_default_functions['lambda_electrostatics_core'](x, beta, beta0)*(np.sqrt(beta/beta0) - 1)
+                         'electrostatic_insert_scale' : lambda x, beta0, beta : RESTProtocol.lambda_default_functions['lambda_electrostatics_insert'](x, beta0, beta)*(np.sqrt(beta/beta0) - 1.),
+                         'electrostatic_delete_scale' : lambda x, beta0, beta : (1. - RESTProtocol.lambda_default_functions['lambda_electrostatics_delete'](x, beta0, beta))*(beta/beta0 - 1.),
+                         'electrostatic_core_scale1' : lambda x, beta0, beta : np.sqrt(beta/beta0) - 1,
+                         'electrostatic_core_scale2' : lambda x, beta0, beta : RESTProtocol.lambda_default_functions['lambda_electrostatics_core'](x, beta0, beta)*(np.sqrt(beta/beta0) - 1.),
+                         'electrostatic_offset_core_scale1' : lambda x, beta0, beta : np.sqrt(beta/beta0) - 1,
+                         'electrostatic_offset_core_scale2' : lambda x, beta0, beta : RESTProtocol.lambda_default_functions['lambda_electrostatics_core'](x, beta0, beta)*(np.sqrt(beta/beta0) - 1)
                          }
     
     default_functions = RESTProtocol.lambda_default_functions
@@ -355,6 +355,7 @@ class RESTStateV2(RESTState):
     steric_scale = _LambdaParameter('steric_scale')
 
     def set_alchemical_parameters(self,
+                                  x,
                                   beta0,
                                   beta):
        """Set each lambda value according to the lambda_functions protocol.
@@ -367,5 +368,5 @@ class RESTStateV2(RESTState):
        """
        lambda_protocol = RESTProtocolV2()
        for parameter_name in lambda_protocol.functions:
-           lambda_value = lambda_protocol.functions[parameter_name](beta0, beta)
+           lambda_value = lambda_protocol.functions[parameter_name](x, beta0, beta)
            setattr(self, parameter_name, lambda_value)
