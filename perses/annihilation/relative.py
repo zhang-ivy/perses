@@ -895,8 +895,8 @@ class HybridTopologyFactory(object):
             The mixiing rules for electrostatics
         """
         # Define mixing rules.
-        sterics_mixing_rules = "epsilonA = sqrt(select(identifier1, epsilonA1, epsilonA1*(1 + steric_scale))*select(identifier2, epsilonA2, epsilonA2*(1 + steric_scale));" # mixing rule for epsilon
-        sterics_mixing_rules += "epsilonB = sqrt(select(identifier1, epsilonB1, epsilonB1*(1 + steric_scale))*select(identifier2, epsilonB2, epsilonB2*(1 + steric_scale));"
+        sterics_mixing_rules = "epsilonA = sqrt(select(identifier1, epsilonA1, epsilonA1*(1 + steric_scale))*select(identifier2, epsilonA2, epsilonA2*(1 + steric_scale)));" # mixing rule for epsilon
+        sterics_mixing_rules += "epsilonB = sqrt(select(identifier1, epsilonB1, epsilonB1*(1 + steric_scale))*select(identifier2, epsilonB2, epsilonB2*(1 + steric_scale)));"
         sterics_mixing_rules += "sigmaA = 0.5*(sigmaA1 + sigmaA2);" # mixing rule for sigma
         sterics_mixing_rules += "sigmaB = 0.5*(sigmaB1 + sigmaB2);" # mixing rule for sigma
         return sterics_mixing_rules
