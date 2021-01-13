@@ -395,8 +395,8 @@ def generate_endpoint_thermodynamic_states(system: openmm.System, topology_propo
     #lambda_one_alchemical_state.set_alchemical_parameters(1.0)
     beta_0 = 1/(kB*temperature)
     beta_m = 1/(kB*temperature)
-    lambda_zero_alchemical_state.set_alchemical_parameters(beta_0, beta_m)
-    lambda_one_alchemical_state.set_alchemical_parameters(beta_0, beta_m)
+    lambda_zero_alchemical_state.set_alchemical_parameters(0, beta_0, beta_m)
+    lambda_one_alchemical_state.set_alchemical_parameters(1, beta_0, beta_m)
 
     check_system(system)
 
