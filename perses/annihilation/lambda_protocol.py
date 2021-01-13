@@ -295,8 +295,14 @@ class RESTProtocolV2(object):
                          'electrostatic_offset_core_scale1' : lambda x, beta, beta0 : np.sqrt(beta/beta0) - 1,
                          'electrostatic_offset_core_scale2' : lambda x, beta, beta0 : RESTProtocol.lambda_default_functions['lambda_electrostatics_core'](x, beta, beta0)*(np.sqrt(beta/beta0) - 1)
                          }
-    default_functions = RESTProtocol.lambda_default_functions.update(mod_functions)
+    
+    default_functions = RESTProtocol.lambda_default_functions
+    default_functions.update(mod_functions)
     def __init__(self):
+        _logger.info(RESTProtocol.lambda_default_functions)
+        _logger.info(RESTProtocolV2.mod_functions)
+        _logger.info(RESTProtocol.lambda_default_functions.update(RESTProtocolV2.mod_functions))
+        _logger.info(RESTProtocolV2.default_functions) 
         self.functions = RESTProtocolV2.default_functions
 
 
