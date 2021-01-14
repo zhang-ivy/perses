@@ -200,14 +200,14 @@ def generate_atp(phase = 'vacuum'):
                                    barostat = barostat,
                                    forcefield_kwargs = {'removeCMMotion': False,
                                                         'ewaldErrorTolerance': 1e-4,
-                                                        'nonbondedMethod': app.PME,
                                                         'constraints' : app.HBonds,
                                                         'hydrogenMass' : 4 * unit.amus},
+                                    periodic_forcefield_kwargs={'nonbondedMethod': app.PME},
                                     small_molecule_forcefield = 'gaff-2.11', molecules = None, cache = None)
 
     if phase == 'solvent':
         modeller = app.Modeller(atp.topology, atp.positions)
-        modeller.addSolvent(system_generator._forcefield, model='tip3p', padding=9*unit.angstroms, ionicStrength=0.15*unit.molar)
+        modeller.addSolvent(system_generator.forcefield, model='tip3p', padding=9*unit.angstroms, ionicStrength=0.15*unit.molar)
         solvated_topology = modeller.getTopology()
         solvated_positions = modeller.getPositions()
 
