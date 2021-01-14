@@ -1848,7 +1848,7 @@ class HybridTopologyFactory(object):
         """
         from openmmtools.constants import ONE_4PI_EPS0 # OpenMM constant for Coulomb interactions (implicitly in md_unit_system units)
 
-        old_new_nonbonded_exceptions = "scale_factor*(U_electrostatics + U_sterics)*select();"
+        old_new_nonbonded_exceptions = "scale_factor*(U_electrostatics + U_sterics);"
 
         if self._softcore_LJ_v2:
             old_new_nonbonded_exceptions += "U_sterics = select(step(r - r_LJ), 4*epsilon*x*(x-1.0), U_sterics_quad);"
