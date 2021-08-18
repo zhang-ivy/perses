@@ -535,21 +535,14 @@ def run_setup(setup_options, serialize_systems=True, build_samplers=True):
         ne_fep = dict()
         for phase in phases:
             _logger.info(f"\t\tphase: {phase}")
-            if setup_options['rest_over_protocol']:
-                from perses.annihilation.relative import RestCapablePMEHybridTopologyFactory
-                factory = RestCapablePMEHybridTopologyFactory
-
-            else:
-                factory = HybridTopologyFactory
-            hybrid_factory = factory(top_prop['%s_topology_proposal' % phase],
+            hybrid_factory = HybridTopologyFactory(top_prop['%s_topology_proposal' % phase],
                                                top_prop['%s_old_positions' % phase],
                                                top_prop['%s_new_positions' % phase],
                                                neglected_new_angle_terms = top_prop[f"{phase}_forward_neglected_angles"],
                                                neglected_old_angle_terms = top_prop[f"{phase}_reverse_neglected_angles"],
                                                softcore_LJ_v2 = setup_options['softcore_v2'],
                                                interpolate_old_and_new_14s = setup_options['anneal_1,4s'],
-                                               rmsd_restraint=setup_options['rmsd_restraint'],
-                                                rest_region=setup_options['rest_region']
+                                               rmsd_restraint=setup_options['rmsd_restraint']
                                                )
 
             if build_samplers:
@@ -578,16 +571,22 @@ def run_setup(setup_options, serialize_systems=True, build_samplers=True):
 
         for phase in phases:
             _logger.info(f"\t\tphase: {phase}:")
+            if setup_options['rest_over_protocol']:
+                from perses.annihilation.relative import RestCapablePMEHybridTopologyFactory
+                factory = RestCapablePMEHybridTopologyFactory
+            else:
+                factory = HybridTopologyFactory
             #TODO write a SAMSFEP class that mirrors NonequilibriumSwitchingFEP
             _logger.info(f"\t\twriting HybridTopologyFactory for phase {phase}...")
-            htf[phase] = HybridTopologyFactory(top_prop['%s_topology_proposal' % phase],
+            htf[phase] = factory(top_prop['%s_topology_proposal' % phase],
                                                top_prop['%s_old_positions' % phase],
                                                top_prop['%s_new_positions' % phase],
                                                neglected_new_angle_terms = top_prop[f"{phase}_forward_neglected_angles"],
                                                neglected_old_angle_terms = top_prop[f"{phase}_reverse_neglected_angles"],
                                                softcore_LJ_v2 = setup_options['softcore_v2'],
                                                interpolate_old_and_new_14s = setup_options['anneal_1,4s'],
-                                               rmsd_restraint=setup_options['rmsd_restraint']
+                                               rmsd_restraint=setup_options['rmsd_restraint'],
+                                               rest_region=setup_options['rest_region']
                                                )
 
         for phase in phases:
