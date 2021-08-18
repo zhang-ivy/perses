@@ -3338,7 +3338,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Add per-angle parameters for defining energy
         custom_angle_force.addPerAngleParameter('theta0_old') # old angle length
         custom_angle_force.addPerAngleParameter('K_old') # old spring constant
-        custom_angle_force.addPerAngleParameter('theta0_old') # new angle length
+        custom_angle_force.addPerAngleParameter('theta0_new') # new angle length
         custom_angle_force.addPerAngleParameter('K_new') # new spring constant
 
         # Now add the parameters
