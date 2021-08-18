@@ -3191,15 +3191,15 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         custom_bond_force.addGlobalParameter("lambda_alchemical_bonds_new", 0.0)
 
         # Add per-bond parameters for rest scaling -- these sets are disjoint
-        custom_bond_force.addPerParticleParameter("is_rest")
-        custom_bond_force.addPerParticleParameter("is_inter")
-        custom_bond_force.addPerParticleParameter("is_nonrest")
+        custom_bond_force.addPerBondParameter("is_rest")
+        custom_bond_force.addPerBondParameter("is_inter")
+        custom_bond_force.addPerBondParameter("is_nonrest")
 
         # Add per-bond parameters for alchemical scaling -- these sets are also disjoint
-        custom_bond_force.addPerParticleParameter('is_environment')
-        custom_bond_force.addPerParticleParameter('is_core')
-        custom_bond_force.addPerParticleParameter('is_unique_old')
-        custom_bond_force.addPerParticleParameter('is_unique_new')
+        custom_bond_force.addPerBondParameter('is_environment')
+        custom_bond_force.addPerBondParameter('is_core')
+        custom_bond_force.addPerBondParameter('is_unique_old')
+        custom_bond_force.addPerBondParameter('is_unique_new')
 
         # Add per-bond parameters for defining energy
         custom_bond_force.addPerBondParameter('length_old') # old bond length
@@ -3324,15 +3324,15 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         custom_angle_force.addGlobalParameter("lambda_alchemical_angles_new", 0.0)
 
         # Add per-angle parameters for rest scaling -- these sets are disjoint
-        custom_angle_force.addPerParticleParameter("is_rest")
-        custom_angle_force.addPerParticleParameter("is_inter")
-        custom_angle_force.addPerParticleParameter("is_nonrest")
+        custom_angle_force.addPerAngleParameter("is_rest")
+        custom_angle_force.addPerAngleParameter("is_inter")
+        custom_angle_force.addPerAngleParameter("is_nonrest")
 
         # Add per-angle parameters for alchemical scaling -- these sets are also disjoint
-        custom_angle_force.addPerParticleParameter('is_environment')
-        custom_angle_force.addPerParticleParameter('is_core')
-        custom_angle_force.addPerParticleParameter('is_unique_old')
-        custom_angle_force.addPerParticleParameter('is_unique_new')
+        custom_angle_force.addPerAngleParameter('is_environment')
+        custom_angle_force.addPerAngleParameter('is_core')
+        custom_angle_force.addPerAngleParameter('is_unique_old')
+        custom_angle_force.addPerAngleParameter('is_unique_new')
 
         # Add per-angle parameters for defining energy
         custom_angle_force.addPerAngleParameter('theta0_old') # old angle length
@@ -3492,15 +3492,15 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         custom_torsion_force.addGlobalParameter("lambda_alchemical_torsions_new", 0.0)
 
         # Add per-torsion parameters for rest scaling -- these sets are disjoint
-        custom_torsion_force.addPerParticleParameter("is_rest")
-        custom_torsion_force.addPerParticleParameter("is_inter")
-        custom_torsion_force.addPerParticleParameter("is_nonrest")
+        custom_torsion_force.addPerTorsionParameter("is_rest")
+        custom_torsion_force.addPerTorsionParameter("is_inter")
+        custom_torsion_force.addPerTorsionParameter("is_nonrest")
 
         # Add per-torsion parameters for alchemical scaling -- these sets are also disjoint
-        custom_torsion_force.addPerParticleParameter('is_environment')
-        custom_torsion_force.addPerParticleParameter('is_core')
-        custom_torsion_force.addPerParticleParameter('is_unique_old')
-        custom_torsion_force.addPerParticleParameter('is_unique_new')
+        custom_torsion_force.addPerTorsionParameter('is_environment')
+        custom_torsion_force.addPerTorsionParameter('is_core')
+        custom_torsion_force.addPerTorsionParameter('is_unique_old')
+        custom_torsion_force.addPerTorsionParameter('is_unique_new')
 
         # Add per-torsion parameters for defining energy
         custom_torsion_force.addPerTorsionParameter('periodicity_old')
