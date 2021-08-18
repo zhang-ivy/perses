@@ -3640,8 +3640,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         for old_idx in range(old_system_nbf.getNumParticles()):
             charge_old, sigma_old, epsilon_old = old_system_nbf.getParticleParameters(old_idx)  # Grab the old parameters
             hybrid_idx = self._old_to_hybrid_map[old_idx]
-            rest_id = self.get_rest_identifier_nonbondeds(hybrid_idx)
-            alch_id = self.get_alch_identifier_nonbondeds(hybrid_idx)
+            rest_id = self.get_rest_identifier(hybrid_idx)
+            alch_id = self.get_alch_identifier(hybrid_idx)
 
             # Determine what the new parameters are
             if hybrid_idx in self._atom_classes['core_atoms'] or hybrid_idx in self._atom_classes['environment_atoms']:  # Then it has a 'new' counterpart
@@ -3670,8 +3670,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         for hybrid_idx in list(unique_new_hybrid_indices):
             new_idx = self._hybrid_to_new_map[hybrid_idx]
             charge_new, sigma_new, epsilon_new = new_system_nbf.getParticleParameters(new_idx)
-            rest_id = self.get_rest_identifier_nonbondeds(hybrid_idx)
-            alch_id = self.get_alch_identifier_nonbondeds(hybrid_idx)
+            rest_id = self.get_rest_identifier(hybrid_idx)
+            alch_id = self.get_alch_identifier(hybrid_idx)
             assert alch_id == [0, 0, 0, 1], f"encountered a problem iterating over what should only be unique new atoms; got {alch_id}"
             custom_nb_force.addParticle(rest_id + alch_id + [charge_new, sigma_new, epsilon_new, charge_new, sigma_new, epsilon_new])
 
