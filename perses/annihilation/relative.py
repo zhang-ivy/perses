@@ -3137,10 +3137,10 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Get alch_id
         if particles.intersection(self._atom_classes['unique_old_atoms']): # For particle sets, if at least one is in unique old, its considered unique old
             assert not particles.intersection(self._atom_classes['unique_new_atoms'])
-            return [0, 0, 1, 0], 'unique_new_atoms'
+            return [0, 0, 1, 0], 'unique_old_atoms'
         elif particles.intersection(self._atom_classes['unique_new_atoms']): # For particle sets, if at least one is in unique new, its considered unique new
             assert not particles.intersection(self._atom_classes['unique_old_atoms'])
-            return [0, 0, 0, 1], 'unique_old_atoms'
+            return [0, 0, 0, 1], 'unique_new_atoms'
         elif particles.intersection(self._atom_classes['core_atoms']):
             return [0, 1, 0, 0], 'core_atoms'
         elif particles.issubset(self._atom_classes['environment_atoms']):
