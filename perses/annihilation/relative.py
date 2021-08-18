@@ -2945,11 +2945,17 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         self._determine_atom_classes()
         _logger.info("Determined atom classes.")
 
+        # Get positions for the hybrid
+        self._hybrid_positions = self._compute_hybrid_positions()
+
+        # Generate the topology representation
+        self._hybrid_topology = self._create_topology()
+
         # Prep look up dict for determining if atom is solvent
-        if 'openmm' in self._topology.__module__:
-            atoms = self._topology.atoms()
-        elif 'mdtraj' in self._topology.__module__:
-            atoms = self._topology.atoms
+        if 'openmm' in self._hybrid_topology.__module__:
+            atoms = self._hybrid_topology.atoms()
+        elif 'mdtraj' in self._hybrid_topology.__module__:
+            atoms = self._hybrid_topology.atoms
         else:
             raise Exception("Topology object must be simtk.openmm.app.topology or mdtraj.core.topology")
         self._atom_idx_to_object = {atom.index: atom for atom in atoms}
@@ -2977,12 +2983,6 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         if 'NonbondedForce' in self._old_system_forces or 'NonbondedForce' in self._new_system_forces:
             self._transcribe_nonbondeds()
-
-        # Get positions for the hybrid
-        self._hybrid_positions = self._compute_hybrid_positions()
-
-        # Generate the topology representation
-        self._hybrid_topology = self._create_topology()
 
     def _build_hybrid_particles(self):
         """
