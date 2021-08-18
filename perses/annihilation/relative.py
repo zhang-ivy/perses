@@ -3641,7 +3641,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             charge_old, sigma_old, epsilon_old = old_system_nbf.getParticleParameters(old_idx)  # Grab the old parameters
             hybrid_idx = self._old_to_hybrid_map[old_idx]
             rest_id = self.get_rest_identifier(hybrid_idx)
-            alch_id = self.get_alch_identifier(hybrid_idx)
+            alch_id, _ = self.get_alch_identifier(hybrid_idx)
 
             # Determine what the new parameters are
             if hybrid_idx in self._atom_classes['core_atoms'] or hybrid_idx in self._atom_classes['environment_atoms']:  # Then it has a 'new' counterpart
@@ -3671,7 +3671,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             new_idx = self._hybrid_to_new_map[hybrid_idx]
             charge_new, sigma_new, epsilon_new = new_system_nbf.getParticleParameters(new_idx)
             rest_id = self.get_rest_identifier(hybrid_idx)
-            alch_id = self.get_alch_identifier(hybrid_idx)
+            alch_id, _ = self.get_alch_identifier(hybrid_idx)
             assert alch_id == [0, 0, 0, 1], f"encountered a problem iterating over what should only be unique new atoms; got {alch_id}"
             custom_nb_force.addParticle(rest_id + alch_id + [charge_new, sigma_new, epsilon_new, charge_new, sigma_new, epsilon_new])
 
@@ -3709,8 +3709,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Iterate over the old_term_collector and add appropriate bonds
         for hybrid_index_pair in old_term_collector.keys():
             idx_set = set(list(hybrid_index_pair))
-            scale_id = self.get_scale_identifier_nonbondeds(idx_set)
-            alch_id, atom_class = self.get_alch_identifier_nonbondeds(idx_set)
+            scale_id = self.get_scale_identifier(idx_set)
+            alch_id, _ = self.get_alch_identifier(idx_set)
 
             old_idx, chargeProd_old, sigma_old, epsilon_old = old_term_collector[hybrid_index_pair]
             try:
@@ -3739,8 +3739,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Now iterate over the modified new term collector and add appropriate bonds. these should only be unique new, right?
         for hybrid_index_pair in mod_new_term_collector.keys():
             idx_set = set(list(hybrid_index_pair))
-            scale_id = self.get_scale_identifier_nonbondeds(idx_set)
-            alch_id = self.get_alch_identifier_nonbondeds(idx_set)
+            scale_id = self.get_scale_identifier(idx_set)
+            alch_id, _ = self.get_alch_identifier(idx_set)
             assert alch_id == [0, 0, 0, 1], f"we are iterating over modified new term collector, but the string identifier returned {alch_id}"
             new_bond_idx, chargeProd_new, sigma_new, epsilon_new = new_term_collector[hybrid_index_pair]
 
