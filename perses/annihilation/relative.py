@@ -3820,15 +3820,15 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         else:
             # Add per-bond parameters for rest scaling -- these sets are disjoint
-            custom_force.addPerParticleParameter("is_rest")
-            custom_force.addPerParticleParameter("is_inter")
-            custom_force.addPerParticleParameter("is_nonrest")
+            custom_force.addPerBondParameter("is_rest")
+            custom_force.addPerBondParameter("is_inter")
+            custom_force.addPerBondParameter("is_nonrest")
 
             # Add per-bond parameters for alchemical scaling -- these sets are also disjoint
-            custom_force.addPerParticleParameter('is_environment')
-            custom_force.addPerParticleParameter('is_core')
-            custom_force.addPerParticleParameter('is_unique_old')
-            custom_force.addPerParticleParameter('is_unique_new')
+            custom_force.addPerBondParameter('is_environment')
+            custom_force.addPerBondParameter('is_core')
+            custom_force.addPerBondParameter('is_unique_old')
+            custom_force.addPerBondParameter('is_unique_new')
 
             # Add per-bond parameters for defining energy
             custom_force.addPerBondParameter('chargeProd_old')
