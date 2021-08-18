@@ -2942,7 +2942,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         self._hybrid_to_new_map = {value : key for key, value in self._new_to_hybrid_map.items()}
 
         # Assign atoms to one of the classes described in the class docstring
-        self._determine_atom_classes()
+        self._atom_classes = self._determine_atom_classes()
         _logger.info("Determined atom classes.")
 
         # Get positions for the hybrid
