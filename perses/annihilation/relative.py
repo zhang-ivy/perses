@@ -3709,7 +3709,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Iterate over the old_term_collector and add appropriate bonds
         for hybrid_index_pair in old_term_collector.keys():
             idx_set = set(list(hybrid_index_pair))
-            scale_id = self.get_scale_identifier(idx_set)
+            rest_id = self.get_rest_identifier(idx_set)
             alch_id, _ = self.get_alch_identifier(idx_set)
 
             old_idx, chargeProd_old, sigma_old, epsilon_old = old_term_collector[hybrid_index_pair]
@@ -3722,7 +3722,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                 assert new_term_collector[hybrid_index_pair][1:] == old_term_collector[hybrid_index_pair][1:], f"hybrid_index_pair {hybrid_index_pair} bond term was identified in old term collector as {old_term_collector[hybrid_index_pair][1:]}, but in new term collector as {new_term_collector[hybrid_index_pair][1:]}"
 
             params = (hybrid_index_pair[0], hybrid_index_pair[1],
-                                   scale_id + alch_id +
+                                   rest_id + alch_id +
                                    [chargeProd_old, sigma_old, epsilon_old, chargeProd_new, sigma_new, epsilon_new])
 
             custom_nb_force.addExclusion(*hybrid_index_pair)
@@ -3739,13 +3739,13 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Now iterate over the modified new term collector and add appropriate bonds. these should only be unique new, right?
         for hybrid_index_pair in mod_new_term_collector.keys():
             idx_set = set(list(hybrid_index_pair))
-            scale_id = self.get_scale_identifier(idx_set)
+            rest_id = self.get_rest_identifier(idx_set)
             alch_id, _ = self.get_alch_identifier(idx_set)
             assert alch_id == [0, 0, 0, 1], f"we are iterating over modified new term collector, but the string identifier returned {alch_id}"
             new_bond_idx, chargeProd_new, sigma_new, epsilon_new = new_term_collector[hybrid_index_pair]
 
             params = (hybrid_index_pair[0], hybrid_index_pair[1],
-                                   scale_id + alch_id +
+                                   rest_id + alch_id +
                                    [chargeProd_new,  sigma_new, epsilon_new, chargeProd_new, sigma_new, epsilon_new])
 
             custom_nb_force.addExclusion(*hybrid_index_pair)
