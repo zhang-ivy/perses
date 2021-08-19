@@ -3635,7 +3635,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                                                                  old_term_collector[hybrid_index_pair],
                                                                  mod_new_term_collector)
                 if hybrid_index_pair: # If hybrid_index_pair is None, do not add it to the dictionary
-                    mod_new_term_collector[hybrid_index_pair] = [] # Setting this to an empty list is sufficient (the key doesn't need to be popped) because the torsion terms are added by iterating over the list
+                    mod_new_term_collector.pop(hybrid_index_pair)
 
 
             for torsion_term in old_term_collector[hybrid_index_pair]:
