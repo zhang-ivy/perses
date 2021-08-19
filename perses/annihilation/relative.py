@@ -3259,7 +3259,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                 new_bond_idx, r0_new, k_new = new_term_collector[hybrid_index_pair]
             except Exception as e: # this might be a unique old term
                 r0_new, k_new = r0_old, k_old
-            if atom_class == 'environment': # if the bond is environment, the new/old terms must be identical
+            if atom_class == 'environment_atoms': # if the bond is environment, the new/old terms must be identical
                 assert new_term_collector[hybrid_index_pair][1:] == old_term_collector[hybrid_index_pair][1:], f"Hybrid_index_pair {hybrid_index_pair} bond term was identified in old term collector as {old_term_collector[hybrid_index_pair][1:]}, but in new term collector as {new_term_collector[hybrid_index_pair][1:]}"
 
             # Add the bond
@@ -3404,7 +3404,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                 new_angle_idx, theta0_new, k_new = new_term_collector[hybrid_index_pair]
             except Exception as e: # This might be a unique old term
                 theta0_new, k_new = theta0_old, k_old
-            if atom_class == 'environment': # If the first entry in the alchemical id is 1, that means it is env, so the new/old terms must be identical?
+            if atom_class == 'environment_atoms': # If the first entry in the alchemical id is 1, that means it is env, so the new/old terms must be identical?
                 assert new_term_collector[hybrid_index_pair][1:] == old_term_collector[hybrid_index_pair][1:], f"Hybrid_index_pair {hybrid_index_pair} angle term was identified in old_term_collector as {old_term_collector[hybrid_index_pair]} but in the new_term_collector as {new_term_collector[hybrid_index_pair]}"
 
             # Add the angle
@@ -3621,10 +3621,32 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             rest_id = self.get_rest_identifier(idx_set)
             alch_id, atom_class = self.get_alch_identifier(idx_set)
 
+            if atom_class == 'environment':
+                # Check that the list of old terms is equal to the list of new terms
+                assert self._is_torsion_equal(hybrid_index_pair,
+                                              old_term_collector[hybrid_index_pair],
+                                              hybrid_index_pair,
+                                              new_term_collector[hybrid_index_pair]), \
+                    f"hybrid_index_pair {hybrid_index_pair} torsion term was identified in old_term_collector as {old_term_collector[hybrid_index_pair]} but in the new_term_collector as {new_term_collector[hybrid_index_pair]}"
+
+                # Remove the entry in the mod_new_term collector
+                if hybrid_index_pair not in mod_new_term_collector:  # If the hybrid_index_pair is not in the mod_new_term_collector, check to see if its there in a different order
+                    hybrid_index_pair = self._find_torsion_match(hybrid_index_pair,
+                                                                 old_term_collector[hybrid_index_pair],
+                                                                 mod_new_term_collector)
+                if hybrid_index_pair: # If hybrid_index_pair is None, do not add it to the dictionary
+                    mod_new_term_collector[hybrid_index_pair] = [] # Setting this to an empty list is sufficient (the key doesn't need to be popped) because the torsion terms are added by iterating over the list
+
+
             for torsion_term in old_term_collector[hybrid_index_pair]:
 
                 # Get old terms
-                old_torsion_idx, periodicity_old, phase_old, k_old = torsion_term
+                old_torsion_idx, periodicity_old, phase_old, K_old = torsion_term
+
+                if atom_class in ['unique_old_atoms', 'core_atoms']:
+                    periodicity_new, phase_new, K_new = periodicity_old * 0, phase_old * 0, K_old * 0
+                elif atom_class == 'environment_atoms':
+                    periodicity_new, phase_new, K_new = periodicity_old, phase_old, K_old
 
                 # Add torsion
                 torsion_term = (hybrid_index_pair[0],
@@ -3633,10 +3655,10 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                               hybrid_index_pair[3],
                               rest_id + alch_id + [periodicity_old,
                                                     phase_old,
-                                                    k_old,
-                                                    periodicity_old * 0,
-                                                    phase_old * 0,
-                                                    k_old * 0])
+                                                    K_old,
+                                                    periodicity_new,
+                                                    phase_new,
+                                                    K_new])
                 hybrid_torsion_idx = custom_torsion_force.addTorsion(*torsion_term)
 
                 # Add to dictionary for bookkeeping
@@ -3648,23 +3670,6 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                     self._hybrid_to_environment_torsion_indices[hybrid_torsion_idx] = old_torsion_idx
                 else:
                     raise Exception(f"Old torsion index {old_torsion_idx} cannot be a unique new torsion index")
-
-            if atom_class == 'environment':
-
-                # Check that the list of old terms is equal to the list of new terms
-                assert self._is_torsion_equal(hybrid_index_pair,
-                                              old_term_collector[hybrid_index_pair],
-                                              hybrid_index_pair,
-                                              new_term_collector[hybrid_index_pair]), \
-                    f"hybrid_index_pair {hybrid_index_pair} torsion term was identified in old_term_collector as {old_term_collector[hybrid_index_pair]} but in the new_term_collector as {new_term_collector[hybrid_index_pair]}"
-
-                # Remove the entry in the new term collector
-                if hybrid_index_pair not in mod_new_term_collector:  # If the hybrid_index_pair is not in the mod_new_term_collector, check to see if its there in a different order
-                    hybrid_index_pair = self._find_torsion_match(hybrid_index_pair,
-                                                                 old_term_collector[hybrid_index_pair],
-                                                                 mod_new_term_collector)
-                if hybrid_index_pair: # If hybrid_index_pair is None, do not add it to the dictionary
-                    mod_new_term_collector[hybrid_index_pair] = [] # Setting this to an empty list is sufficient (the key doesn't need to be popped) because the torsion terms are added by iterating over the list
 
         # Now iterate over the modified new term collector and add appropriate torsions. These should only be unique new or core, right?
         for hybrid_index_pair in mod_new_term_collector.keys():
@@ -3678,7 +3683,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             for torsion_term in mod_new_term_collector[hybrid_index_pair]:
 
                 # Get new term
-                new_torsion_idx, periodicity_new, phase_new, k_new = torsion_term
+                new_torsion_idx, periodicity_new, phase_new, K_new = torsion_term
 
                 # Add torsion
                 torsion_term = (hybrid_index_pair[0],
@@ -3687,10 +3692,10 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                               hybrid_index_pair[3],
                               rest_id + alch_id + [periodicity_new * 0,
                                                     phase_new * 0,
-                                                    k_new * 0,
+                                                    K_new * 0,
                                                     periodicity_new,
                                                     phase_new,
-                                                    k_new])
+                                                    K_new])
                 hybrid_torsion_idx = custom_torsion_force.addTorsion(*torsion_term)
 
                 # Add to dictionary for bookkeeping
