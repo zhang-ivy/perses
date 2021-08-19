@@ -2679,12 +2679,12 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
     # global parameters:
     #
-    # - lambda_electrostatics{_exceptions}_rest_scale - this is sqrt(beta/beta0)
-    # - lambda_sterics{_exceptions}_rest_scale - this is sqrt(beta/beta0) and is separated from electrostatics to allow for more controllability
-    # - lambda_electrostatics_old - this goes from 1 to 0 (on to off) and is split from lambda_electrostatics_new to enable additional control of the unique old vs. new atoms
-    # - lambda_electrostatics_new - this goes from 0 to 1 (off to on)
-    # - lambda_sterics_old - this goes from 1 to 0 (on to off)
-    # - lambda_sterics_new - this goes from 0 to 1 (off to on)
+    # - lambda_rest_electrostatics{_exceptions} - this is sqrt(beta/beta0)
+    # - lambda_rest_sterics{_exceptions} - this is sqrt(beta/beta0) and is separated from electrostatics to allow for more controllability
+    # - lambda_alchemical_electrostatics_old - this goes from 1 to 0 (on to off) and is split from lambda_electrostatics_new to enable additional control of the unique old vs. new atoms
+    # - lambda_alchemical_electrostatics_new - this goes from 0 to 1 (off to on)
+    # - lambda_alchemical_sterics_old - this goes from 1 to 0 (on to off)
+    # - lambda_alchemical_sterics_new - this goes from 0 to 1 (off to on)
 
     # per particle parameters:
     #
@@ -2740,42 +2740,42 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         # Define charge1 and charge2 (with alchemical scaling)
         "charge1 = (is_unique_old1 * old_charge_scaled1) + (is_unique_new1 * new_charge_scaled1) + is_core1 * (old_charge_scaled1 + new_charge_scaled1) + is_environment1 * (old_charge_scaled1 + new_charge_scaled1);",
-        "old_charge_scaled1 = lambda_electrostatics_old * charge_old1;",
-        "new_charge_scaled1 = lambda_electrostatics_new * charge_new1;",
+        "old_charge_scaled1 = lambda_alchemical_electrostatics_old * charge_old1;",
+        "new_charge_scaled1 = lambda_alchemical_electrostatics_new * charge_new1;",
 
         "charge2 = (is_unique_old2 * old_charge_scaled2) + (is_unique_new2 * new_charge_scaled2) + is_core2 * (old_charge_scaled2 + new_charge_scaled2) + is_environment2 * (old_charge_scaled2 + new_charge_scaled2);",
-        "old_charge_scaled2 = lambda_electrostatics_old * charge_old2;",
-        "new_charge_scaled2 = lambda_electrostatics_new * charge_new2;",
+        "old_charge_scaled2 = lambda_alchemical_electrostatics_old * charge_old2;",
+        "new_charge_scaled2 = lambda_alchemical_electrostatics_new * charge_new2;",
 
         # Define sigma
         "sigma = (sigma1 + sigma2) / 2;",
 
         # Define sigma1 and sigma2 (with alchemical scaling)
         "sigma1 = (is_unique_old1 * old_sigma_scaled1) + (is_unique_new1 * new_sigma_scaled1) + is_core1 * (old_sigma_scaled1 + new_sigma_scaled1) + is_environment1 * (old_sigma_scaled1 + new_sigma_scaled1);",
-        "old_sigma_scaled1 = lambda_sterics_old * sigma_old1;",
-        "new_sigma_scaled1 = lambda_sterics_new * sigma_new1;",
+        "old_sigma_scaled1 = lambda_alchemical_sterics_old * sigma_old1;",
+        "new_sigma_scaled1 = lambda_alchemical_sterics_new * sigma_new1;",
 
         "sigma2 = (is_unique_old2 * old_sigma_scaled2) + (is_unique_new2 * new_sigma_scaled2) + is_core2 * (old_sigma_scaled2 + new_sigma_scaled2) + is_environment2 * (old_sigma_scaled2 + new_sigma_scaled2);",
-        "old_sigma_scaled2 = lambda_sterics_old * sigma_old2;",
-        "new_sigma_scaled2 = lambda_sterics_new * sigma_new2;",
+        "old_sigma_scaled2 = lambda_alchemical_sterics_old * sigma_old2;",
+        "new_sigma_scaled2 = lambda_alchemical_sterics_new * sigma_new2;",
 
         # Define epsilon (with rest scaling)
         "epsilon = p1_sterics_rest_scale * p2_sterics_rest_scale * sqrt(epsilon1 * epsilon2);",
 
         # Define epsilon1 and epsilon2 (with alchemical scaling)
         "epsilon1 = (is_unique_old1 * old_epsilon_scaled1) + (is_unique_new1 * new_epsilon_scaled1) + is_core1 * (old_epsilon_scaled1 + new_epsilon_scaled1) + is_environment1 * (old_epsilon_scaled1 + new_epsilon_scaled1);",
-        "old_epsilon_scaled1 = lambda_sterics_old * epsilon_old1;",
-        "new_epsilon_scaled1 = lambda_sterics_new * epsilon_new1;",
+        "old_epsilon_scaled1 = lambda_alchemical_sterics_old * epsilon_old1;",
+        "new_epsilon_scaled1 = lambda_alchemical_sterics_new * epsilon_new1;",
 
         "epsilon2 = (is_unique_old2 * old_epsilon_scaled2) + (is_unique_new2 * new_epsilon_scaled2) + is_core2 * (old_epsilon_scaled2 + new_epsilon_scaled2) + is_environment2 * (old_epsilon_scaled2 + new_epsilon_scaled2);",
-        "old_epsilon_scaled2 = lambda_sterics_old * epsilon_old2;",
-        "new_epsilon_scaled2 = lambda_sterics_new * epsilon_new2;",
+        "old_epsilon_scaled2 = lambda_alchemical_sterics_old * epsilon_old2;",
+        "new_epsilon_scaled2 = lambda_alchemical_sterics_new * epsilon_new2;",
 
         # Define rest scale factors (normal rest)
-        "p1_electrostatics_rest_scale = is_rest1 * lambda_electrostatics_rest_scale;",
-        "p2_electrostatics_rest_scale = is_rest2 * lambda_electrostatics_rest_scale;",
-        "p1_sterics_rest_scale = is_rest1 * lambda_sterics_rest_scale;",
-        "p2_sterics_rest_scale = is_rest2 * lambda_sterics_rest_scale;",
+        "p1_electrostatics_rest_scale = is_rest1 * lambda_rest_electrostatics;",
+        "p2_electrostatics_rest_scale = is_rest2 * lambda_rest_electrostatics;",
+        "p1_sterics_rest_scale = is_rest1 * lambda_rest_sterics;",
+        "p2_sterics_rest_scale = is_rest2 * lambda_rest_sterics;",
 
         # Define rest scale factors (scaled water rest)
         # "p1_rest_scale = select(1 - is_both_solvent, is_rest1 * lambda_rest_scale + is_nonrest_solute1 + is_nonrest_solvent1 * lambda_rest_scale, 1);",
@@ -2792,8 +2792,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         "r_eff_sterics = sqrt(r^2 + w_sterics^2);",
 
         # Define 4th dimension terms:
-        "w_electrostatics = is_unique_old * lambda_electrostatics_new * w_scale * r_cutoff + is_unique_new * lambda_electrostatics_old * w_scale * r_cutoff;", # because we want w for unique old atoms to go from 0 to 1 and the opposite for unique new atoms
-        "w_sterics = is_unique_old * lambda_sterics_new * w_scale * r_cutoff + is_unique_new * lambda_sterics_old * w_scale * r_cutoff;",
+        "w_electrostatics = is_unique_old * lambda_alchemical_electrostatics_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_electrostatics_old * w_scale * r_cutoff;", # because we want w for unique old atoms to go from 0 to 1 and the opposite for unique new atoms
+        "w_sterics = is_unique_old * lambda_alchemical_sterics_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_sterics_old * w_scale * r_cutoff;",
         "is_unique_old = step(is_unique_old1 + is_unique_old2 - 0.1);",
         "is_unique_new = step(is_unique_new1 + is_unique_new2 - 0.1);",
         "w_scale = {w_scale};"
@@ -2805,8 +2805,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         "U_electrostatics * electrostatics_rest_scale + U_sterics * sterics_rest_scale;",
 
         # Define rest scale
-        "electrostsatics_rest_scale = is_rest * lambda_electrostatics_exceptions_rest_scale * lambda_electrostatics_exceptions_rest_scale + is_inter * lambda_electrostatics_exceptions_rest_scale + is_nonrest;",
-        "sterics_rest_scale = is_rest * lambda_sterics_exceptions_rest_scale * lambda_sterics_exceptions_rest_scale + is_inter * lambda_sterics_exceptions_rest_scale + is_nonrest;",
+        "electrostsatics_rest_scale = is_rest * lambda_rest_electrostatics_exceptions * lambda_rest_electrostatics_exceptions + is_inter * lambda_rest_electrostatics_exceptions + is_nonrest;",
+        "sterics = is_rest * lambda_rest_sterics_exceptions * lambda_rest_sterics_exceptions + is_inter * lambda_rest_sterics_exceptions + is_nonrest;",
 
         # Define electrostatics functional form
         f"U_electrostatics = {ONE_4PI_EPS0} * chargeProd * erfc(alpha * r)/ r_eff_electrostatics;",
@@ -2817,18 +2817,18 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         # Define chargeProd (with alchemical scaling)
         "chargeProd = is_unique_old * old_charge_scaled + is_unique_new * new_charge_scaled + is_core * (old_charge_scaled + new_charge_scaled) + is_environment * (old_charge_scaled + new_charge_scaled);",
-        "old_charge_scaled = lambda_electrostatics_old * chargeProd_old;",
-        "new_charge_scaled = lambda_electrostatics_new * chargeProd_new;",
+        "old_charge_scaled = lambda_alchemical_electrostatics_old * chargeProd_old;",
+        "new_charge_scaled = lambda_alchemical_electrostatics_new * chargeProd_new;",
 
         # Define sigma (with alchemical scaling)
         "sigma = is_unique_old * old_sigma_scaled + is_unique_new * new_sigma_scaled + is_core * (old_sigma_scaled + new_sigma_scaled) + is_environment * (old_sigma_scaled + new_sigma_scaled);",
-        "old_sigma_scaled = lambda_sterics_old * sigma_old;",
-        "new_sigma_scaled = lambda_sterics_new * sigma_new;",
+        "old_sigma_scaled = lambda_alchemical_sterics_old * sigma_old;",
+        "new_sigma_scaled = lambda_alchemical_sterics_new * sigma_new;",
 
         # Define epsilon (with alchemical scaling)
         "epsilon = is_unique_old * old_epsilon_scaled + is_unique_new * new_epsilon_scaled + is_core * (old_epsilon_scaled + new_epsilon_scaled) + is_environment * (old_epsilon_scaled + new_epsilon_scaled);",
-        "old_epsilon_scaled = lambda_sterics_old * epsilon_old;",
-        "new_epsilon_scaled = lambda_sterics_new * epsilon_new;",
+        "old_epsilon_scaled = lambda_alchemical_sterics_old * epsilon_old;",
+        "new_epsilon_scaled = lambda_alchemical_sterics_new * epsilon_new;",
 
         # Define alpha
         "alpha = sqrt(-log(2 * delta) / r_cutoff);",
@@ -2840,8 +2840,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         "r_eff_sterics = sqrt(r^2 + w_sterics^2);",
 
         # Define 4th dimension terms:
-        "w_electrostatics = is_unique_old * lambda_electrostatics_new * w_scale * r_cutoff + is_unique_new * lambda_electrostatics_old * w_scale * r_cutoff;",
-        "w_sterics = is_unique_old * lambda_sterics_new * w_scale * r_cutoff + is_unique_new * lambda_sterics_old * w_scale * r_cutoff;",
+        "w_electrostatics = is_unique_old * lambda_alchemical_electrostatics_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_electrostatics_old * w_scale * r_cutoff;",
+        "w_sterics = is_unique_old * lambda_alchemical_sterics_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_sterics_old * w_scale * r_cutoff;",
         "w_scale = {w_scale};"
 
     ]
@@ -3162,8 +3162,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         # Define the custom expression
         bond_expression = "rest_scale * (K / 2) * (r - length)^2;"
-        bond_expression += "rest_scale = is_rest * lambda_rest_scale_bonds * lambda_rest_scale_bonds " \
-                           "+ is_inter * lambda_rest_scale_bonds " \
+        bond_expression += "rest_scale = is_rest * lambda_rest_bonds * lambda_rest_bonds " \
+                           "+ is_inter * lambda_rest_bonds " \
                            "+ is_nonrest;"
 
         # Define K (with alchemical scaling)
@@ -3187,7 +3187,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         self._hybrid_system.addForce(custom_bond_force)
 
         # Add global parameters
-        custom_bond_force.addGlobalParameter("lambda_rest_scale_bonds", 1.0)
+        custom_bond_force.addGlobalParameter("lambda_rest_bonds", 1.0)
         custom_bond_force.addGlobalParameter("lambda_alchemical_bonds_old", 1.0)
         custom_bond_force.addGlobalParameter("lambda_alchemical_bonds_new", 0.0)
 
@@ -3295,8 +3295,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         # Define the custom expression
         angle_expression = "rest_scale * (K / 2) * (theta - theta0)^2;"
-        angle_expression += "rest_scale = is_rest * lambda_rest_scale_angles * lambda_rest_scale_angles " \
-                           "+ is_inter * lambda_rest_scale_angles " \
+        angle_expression += "rest_scale = is_rest * lambda_rest_angles * lambda_rest_angles " \
+                           "+ is_inter * lambda_rest_angles " \
                            "+ is_nonrest;"
 
         # Define K (with alchemical scaling)
@@ -3320,7 +3320,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         self._hybrid_system.addForce(custom_angle_force)
 
         # Add global parameters
-        custom_angle_force.addGlobalParameter("lambda_rest_scale_angles", 1.0)
+        custom_angle_force.addGlobalParameter("lambda_rest_angles", 1.0)
         custom_angle_force.addGlobalParameter("lambda_alchemical_angles_old", 1.0)
         custom_angle_force.addGlobalParameter("lambda_alchemical_angles_new", 0.0)
 
@@ -3475,8 +3475,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         # Define the custom expression
         torsion_expression = "rest_scale * (lambda_alchemical_torsions_old * U1 + lambda_alchemical_torsions_new * U2);"
-        torsion_expression += "rest_scale = is_rest * lambda_rest_scale_torsions * lambda_rest_scale_torsions " \
-                              "+ is_inter * lambda_rest_scale_torsions " \
+        torsion_expression += "rest_scale = is_rest * lambda_rest_torsions * lambda_rest_torsions " \
+                              "+ is_inter * lambda_rest_torsions " \
                               "+ is_nonrest;"
 
         # Define U1 and U2
@@ -3488,7 +3488,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         self._hybrid_system.addForce(custom_torsion_force)
 
         # Add global parameters
-        custom_torsion_force.addGlobalParameter("lambda_rest_scale_torsions", 1.0)
+        custom_torsion_force.addGlobalParameter("lambda_rest_torsions", 1.0)
         custom_torsion_force.addGlobalParameter("lambda_alchemical_torsions_old", 1.0)
         custom_torsion_force.addGlobalParameter("lambda_alchemical_torsions_new", 0.0)
 
@@ -3791,12 +3791,12 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         # Add global parameters
 
-        custom_force.addGlobalParameter(f"lambda_electrostatics{suffix}_rest_scale", 1.0)
-        custom_force.addGlobalParameter(f"lambda_sterics{suffix}_rest_scale", 1.0)
-        custom_force.addGlobalParameter(f"lambda_electrostatics{suffix}_old", 1.0)
-        custom_force.addGlobalParameter("lambda_electrostatics{suffix}_new", 0.0)
-        custom_force.addGlobalParameter("lambda_sterics{suffix}_old", 1.0)
-        custom_force.addGlobalParameter("lambda_sterics{suffix}_new", 0.0)
+        custom_force.addGlobalParameter(f"lambda_rest_electrostatics{suffix}", 1.0)
+        custom_force.addGlobalParameter(f"lambda_rest_sterics{suffix}", 1.0)
+        custom_force.addGlobalParameter(f"lambda_alchemical_electrostatics{suffix}_old", 1.0)
+        custom_force.addGlobalParameter("lambda_alchemical_electrostatics{suffix}_new", 0.0)
+        custom_force.addGlobalParameter("lambda_alchemical_sterics{suffix}_old", 1.0)
+        custom_force.addGlobalParameter("lambda_alchemical_sterics{suffix}_new", 0.0)
 
         if not is_exception:
             # Add per-particle parameters for rest scaling -- these three sets are disjoint
