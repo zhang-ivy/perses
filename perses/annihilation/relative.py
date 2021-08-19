@@ -3788,7 +3788,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                                                      r_cutoff=self._r_cutoff.value_in_unit_system(unit.md_unit_system),
                                                      delta=self._delta)
             custom_force = openmm.CustomBondForce(formatted_expression)
-            suffix = '_exception'
+            suffix = '_exceptions'
 
         # Add global parameters
 
