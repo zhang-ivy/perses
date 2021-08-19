@@ -3644,7 +3644,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                 old_torsion_idx, periodicity_old, phase_old, K_old = torsion_term
 
                 if atom_class in ['unique_old_atoms', 'core_atoms']:
-                    periodicity_new, phase_new, K_new = periodicity_old * 0, phase_old * 0, K_old * 0
+                    periodicity_new, phase_new, K_new = periodicity_old * 0., phase_old * 0., K_old * 0.
                 elif atom_class == 'environment_atoms':
                     periodicity_new, phase_new, K_new = periodicity_old, phase_old, K_old
 
@@ -3690,9 +3690,9 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                               hybrid_index_pair[1],
                               hybrid_index_pair[2],
                               hybrid_index_pair[3],
-                              rest_id + alch_id + [periodicity_new * 0,
-                                                    phase_new * 0,
-                                                    K_new * 0,
+                              rest_id + alch_id + [periodicity_new * 0.,
+                                                    phase_new * 0.,
+                                                    K_new * 0.,
                                                     periodicity_new,
                                                     phase_new,
                                                     K_new])
