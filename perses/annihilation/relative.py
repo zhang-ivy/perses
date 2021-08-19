@@ -2785,7 +2785,6 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Define alpha
         "alpha = sqrt(-log(2 * delta) / r_cutoff);",
         "delta = {delta};",
-        "r_cutoff = {r_cutoff};",
 
         # Define r_eff
         "r_eff_electrostatics = sqrt(r^2 + w_electrostatics^2);",
@@ -2796,7 +2795,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         "w_sterics = is_unique_old * lambda_alchemical_sterics_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_sterics_old * w_scale * r_cutoff;",
         "is_unique_old = step(is_unique_old1 + is_unique_old2 - 0.1);",
         "is_unique_new = step(is_unique_new1 + is_unique_new2 - 0.1);",
-        "w_scale = {w_scale};"
+        "w_scale = {w_scale};",
+        "r_cutoff = {r_cutoff};"
     ]
 
     # electrostatic exception
@@ -2833,7 +2833,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Define alpha
         "alpha = sqrt(-log(2 * delta) / r_cutoff);",
         "delta = {delta};",
-        "r_cutoff = {r_cutoff};",
+
 
         # Define r_eff
         "r_eff_electrostatics = sqrt(r^2 + w_electrostatics^2);",
@@ -2842,7 +2842,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Define 4th dimension terms:
         "w_electrostatics = is_unique_old * lambda_alchemical_electrostatics_exceptions_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_electrostatics_exceptions_old * w_scale * r_cutoff;",
         "w_sterics = is_unique_old * lambda_alchemical_sterics_exceptions_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_sterics_exceptions_old * w_scale * r_cutoff;",
-        "w_scale = {w_scale};"
+        "w_scale = {w_scale};",
+        "r_cutoff = {r_cutoff};"
 
     ]
 
