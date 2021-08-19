@@ -2817,18 +2817,18 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         # Define chargeProd (with alchemical scaling)
         "chargeProd = is_unique_old * old_charge_scaled + is_unique_new * new_charge_scaled + is_core * (old_charge_scaled + new_charge_scaled) + is_environment * (old_charge_scaled + new_charge_scaled);",
-        "old_charge_scaled = lambda_alchemical_electrostatics_old * chargeProd_old;",
-        "new_charge_scaled = lambda_alchemical_electrostatics_new * chargeProd_new;",
+        "old_charge_scaled = lambda_alchemical_electrostatics_exceptions_old * chargeProd_old;",
+        "new_charge_scaled = lambda_alchemical_electrostatics_exceptions_new * chargeProd_new;",
 
         # Define sigma (with alchemical scaling)
         "sigma = is_unique_old * old_sigma_scaled + is_unique_new * new_sigma_scaled + is_core * (old_sigma_scaled + new_sigma_scaled) + is_environment * (old_sigma_scaled + new_sigma_scaled);",
-        "old_sigma_scaled = lambda_alchemical_sterics_old * sigma_old;",
-        "new_sigma_scaled = lambda_alchemical_sterics_new * sigma_new;",
+        "old_sigma_scaled = lambda_alchemical_sterics_exceptions_old * sigma_old;",
+        "new_sigma_scaled = lambda_alchemical_sterics_exceptions_new * sigma_new;",
 
         # Define epsilon (with alchemical scaling)
         "epsilon = is_unique_old * old_epsilon_scaled + is_unique_new * new_epsilon_scaled + is_core * (old_epsilon_scaled + new_epsilon_scaled) + is_environment * (old_epsilon_scaled + new_epsilon_scaled);",
-        "old_epsilon_scaled = lambda_alchemical_sterics_old * epsilon_old;",
-        "new_epsilon_scaled = lambda_alchemical_sterics_new * epsilon_new;",
+        "old_epsilon_scaled = lambda_alchemical_sterics_exceptions_old * epsilon_old;",
+        "new_epsilon_scaled = lambda_alchemical_sterics_exceptions_new * epsilon_new;",
 
         # Define alpha
         "alpha = sqrt(-log(2 * delta) / r_cutoff);",
@@ -2840,8 +2840,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         "r_eff_sterics = sqrt(r^2 + w_sterics^2);",
 
         # Define 4th dimension terms:
-        "w_electrostatics = is_unique_old * lambda_alchemical_electrostatics_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_electrostatics_old * w_scale * r_cutoff;",
-        "w_sterics = is_unique_old * lambda_alchemical_sterics_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_sterics_old * w_scale * r_cutoff;",
+        "w_electrostatics = is_unique_old * lambda_alchemical_electrostatics_exceptions_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_electrostatics_exceptions_old * w_scale * r_cutoff;",
+        "w_sterics = is_unique_old * lambda_alchemical_sterics_exceptions_new * w_scale * r_cutoff + is_unique_new * lambda_alchemical_sterics_exceptions_old * w_scale * r_cutoff;",
         "w_scale = {w_scale};"
 
     ]
