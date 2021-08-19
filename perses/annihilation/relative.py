@@ -3474,7 +3474,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         """
 
         # Define the custom expression
-        torsion_expression = "rest_scale * (lambda_alchemical_angles_old * U1 + lambda_alchemical_torsions_new * U2);"
+        torsion_expression = "rest_scale * (lambda_alchemical_torsions_old * U1 + lambda_alchemical_torsions_new * U2);"
         torsion_expression += "rest_scale = is_rest * lambda_rest_scale_torsions * lambda_rest_scale_torsions " \
                               "+ is_inter * lambda_rest_scale_torsions " \
                               "+ is_nonrest;"
