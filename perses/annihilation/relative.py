@@ -3794,9 +3794,9 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         custom_force.addGlobalParameter(f"lambda_rest_electrostatics{suffix}", 1.0)
         custom_force.addGlobalParameter(f"lambda_rest_sterics{suffix}", 1.0)
         custom_force.addGlobalParameter(f"lambda_alchemical_electrostatics{suffix}_old", 1.0)
-        custom_force.addGlobalParameter("lambda_alchemical_electrostatics{suffix}_new", 0.0)
-        custom_force.addGlobalParameter("lambda_alchemical_sterics{suffix}_old", 1.0)
-        custom_force.addGlobalParameter("lambda_alchemical_sterics{suffix}_new", 0.0)
+        custom_force.addGlobalParameter(f"lambda_alchemical_electrostatics{suffix}_new", 0.0)
+        custom_force.addGlobalParameter(f"lambda_alchemical_sterics{suffix}_old", 1.0)
+        custom_force.addGlobalParameter(f"lambda_alchemical_sterics{suffix}_new", 0.0)
 
         if not is_exception:
             # Add per-particle parameters for rest scaling -- these three sets are disjoint
