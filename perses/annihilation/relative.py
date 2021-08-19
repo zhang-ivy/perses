@@ -3227,17 +3227,17 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         for term_idx in range(old_system_bond_force.getNumBonds()):
             p1, p2, r0, k = old_system_bond_force.getBondParameters(term_idx) # grab the parameters
             hybrid_p1, hybrid_p2 = self._old_to_hybrid_map[p1], self._old_to_hybrid_map[p2] # make hybrid indices
-            sorted_list = tuple(sorted([hybrid_p1, hybrid_p2])) # sort the indices
-            assert not sorted_list in old_term_collector.keys(), f"This bond already exists"
-            old_term_collector[sorted_list] = [term_idx, r0, k]
+            sorted_indices = tuple(sorted([hybrid_p1, hybrid_p2])) # sort the indices
+            assert not sorted_indices in old_term_collector.keys(), f"This bond already exists"
+            old_term_collector[sorted_indices] = [term_idx, r0, k]
 
         # Repeat for the new system bond force
         for term_idx in range(new_system_bond_force.getNumBonds()):
             p1, p2, r0, k = new_system_bond_force.getBondParameters(term_idx)
             hybrid_p1, hybrid_p2 = self._new_to_hybrid_map[p1], self._new_to_hybrid_map[p2]
-            sorted_list = tuple(sorted([hybrid_p1, hybrid_p2]))
-            assert not sorted_list in new_term_collector.keys(), f"This bond already exists"
-            new_term_collector[sorted_list] = [term_idx, r0, k]
+            sorted_indices = tuple(sorted([hybrid_p1, hybrid_p2]))
+            assert not sorted_indices in new_term_collector.keys(), f"This bond already exists"
+            new_term_collector[sorted_indices] = [term_idx, r0, k]
 
         # Build generator for debugging purposes
         self._hybrid_to_old_bond_indices = {}
@@ -3247,20 +3247,26 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         # Iterate over the old_term_collector and add appropriate bonds
         for hybrid_index_pair in old_term_collector.keys():
+
+            # Given the atom indices, get rest and alchemical identifiers
             idx_set = set(list(hybrid_index_pair))
             rest_id = self.get_rest_identifier(idx_set)
             alch_id, atom_class = self.get_alch_identifier(idx_set)
+
+            # Get the old terms and new terms, if they exist
             old_bond_idx, r0_old, k_old = old_term_collector[hybrid_index_pair]
             try:
                 new_bond_idx, r0_new, k_new = new_term_collector[hybrid_index_pair]
             except Exception as e: # this might be a unique old term
                 r0_new, k_new = r0_old, k_old
-            if alch_id[0] == 1: # if the first entry in the alchemical id is 1, that means it is env, so the new/old terms must be identical?
+            if atom_class == 'environment': # if the bond is environment, the new/old terms must be identical
                 assert new_term_collector[hybrid_index_pair][1:] == old_term_collector[hybrid_index_pair][1:], f"Hybrid_index_pair {hybrid_index_pair} bond term was identified in old term collector as {old_term_collector[hybrid_index_pair][1:]}, but in new term collector as {new_term_collector[hybrid_index_pair][1:]}"
 
+            # Add the bond
             bond_term = (hybrid_index_pair[0], hybrid_index_pair[1], rest_id + alch_id + [r0_old, k_old, r0_new, k_new])
             hybrid_bond_idx = custom_bond_force.addBond(*bond_term)
 
+            # Add to dictionary for bookkeeping
             if atom_class == 'unique_old_atoms':
                 self._hybrid_to_old_bond_indices[hybrid_bond_idx] = old_bond_idx
             elif atom_class == 'core_atoms':
@@ -3273,19 +3279,25 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Make a modified new_term_collector that omits the terms that are previously handled
         mod_new_term_collector = {key: val for key, val in new_term_collector.items() if key not in list(old_term_collector.keys())}
 
-        # Now iterate over the modified new term collector and add appropriate bonds. These should only be unique new, right?
+        # Now iterate over the modified new term collector and add appropriate bonds. These should only be unique new
         for hybrid_index_pair in mod_new_term_collector.keys():
+
+            # Given the atom indices, get rest and alchemical identifiers
             idx_set = set(list(hybrid_index_pair))
             rest_id = self.get_rest_identifier(idx_set)
             alch_id, atom_class = self.get_alch_identifier(idx_set)
-            assert atom_class == 'unique_new_atoms', f"We are iterating over modified new term collector, but the string identifier returned {atom_class}"
+            assert atom_class == 'unique_new_atoms', f"We are iterating over modified new term collector, but the bond returned is {atom_class}"
 
-            # These terms are unchanged if they are unique new terms. Preserve all valence terms
+            # Get the old and new terms
+            # Since these are unique new bonds, the old terms will be unchanged
             new_bond_idx, r0_old, k_old = mod_new_term_collector[hybrid_index_pair]
             r0_new, k_new = r0_old, k_old
 
+            # Add the bond
             bond_term = (hybrid_index_pair[0], hybrid_index_pair[1], rest_id + alch_id + [r0_old, k_old, r0_new, k_new])
             hybrid_bond_idx = custom_bond_force.addBond(*bond_term)
+
+            # Add to dictionary for bookkeeping
             self._hybrid_to_new_bond_indices[hybrid_bond_idx] = new_bond_idx
 
 
@@ -3360,17 +3372,17 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         for term_idx in range(old_system_angle_force.getNumAngles()):
             p1, p2, p3, theta0, k = old_system_angle_force.getAngleParameters(term_idx) # Grab the parameters
             hybrid_p1, hybrid_p2, hybrid_p3 = self._old_to_hybrid_map[p1], self._old_to_hybrid_map[p2], self._old_to_hybrid_map[p3] # Make hybrid indices
-            sorted_list = tuple([hybrid_p1, hybrid_p2, hybrid_p3]) if hybrid_p1 < hybrid_p3 else tuple([hybrid_p3, hybrid_p2, hybrid_p1])
-            assert not sorted_list in old_term_collector.keys(), f"this angle already exists"
-            old_term_collector[sorted_list] = [term_idx, theta0, k]
+            sorted_indices = tuple([hybrid_p1, hybrid_p2, hybrid_p3]) if hybrid_p1 < hybrid_p3 else tuple([hybrid_p3, hybrid_p2, hybrid_p1])
+            assert not sorted_indices in old_term_collector.keys(), f"This angle already exists"
+            old_term_collector[sorted_indices] = [term_idx, theta0, k]
 
         # Repeat for the new system angle force
         for term_idx in range(new_system_angle_force.getNumAngles()):
             p1, p2, p3, theta0, k = new_system_angle_force.getAngleParameters(term_idx) # Grab the parameters
             hybrid_p1, hybrid_p2, hybrid_p3 = self._new_to_hybrid_map[p1], self._new_to_hybrid_map[p2], self._new_to_hybrid_map[p3] # Make hybrid indices
-            sorted_list = tuple([hybrid_p1, hybrid_p2, hybrid_p3]) if hybrid_p1 < hybrid_p3 else tuple([hybrid_p3, hybrid_p2, hybrid_p1])
-            assert not sorted_list in new_term_collector.keys(), f"this angle already exists"
-            new_term_collector[sorted_list] = [term_idx, theta0, k]
+            sorted_indices = tuple([hybrid_p1, hybrid_p2, hybrid_p3]) if hybrid_p1 < hybrid_p3 else tuple([hybrid_p3, hybrid_p2, hybrid_p1])
+            assert not sorted_indices in new_term_collector.keys(), f"This angle already exists"
+            new_term_collector[sorted_indices] = [term_idx, theta0, k]
 
         # Build generator for debugging purposes
         self._hybrid_to_old_angle_indices = {}
@@ -3380,22 +3392,29 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         # Iterate over the old_term_collector and add appropriate angles
         for hybrid_index_pair in old_term_collector.keys():
+
+            # Given the atom indices, get rest and alchemical identifiers
             idx_set = set(list(hybrid_index_pair))
             rest_id = self.get_rest_identifier(idx_set)
             alch_id, atom_class = self.get_alch_identifier(idx_set)
+
+            # Get the old terms and the new terms, if they exist
             old_angle_idx, theta0_old, k_old = old_term_collector[hybrid_index_pair]
             try:
                 new_angle_idx, theta0_new, k_new = new_term_collector[hybrid_index_pair]
             except Exception as e: # This might be a unique old term
                 theta0_new, k_new = theta0_old, k_old
-            if alch_id[0] == 1: # If the first entry in the alchemical id is 1, that means it is env, so the new/old terms must be identical?
-                assert new_term_collector[hybrid_index_pair][1:] == old_term_collector[hybrid_index_pair][1:], f"hybrid_index_pair {hybrid_index_pair} angle term was identified in old_term_collector as {old_term_collector[hybrid_index_pair]} but in the new_term_collector as {new_term_collector[hybrid_index_pair]}"
+            if atom_class == 'environment': # If the first entry in the alchemical id is 1, that means it is env, so the new/old terms must be identical?
+                assert new_term_collector[hybrid_index_pair][1:] == old_term_collector[hybrid_index_pair][1:], f"Hybrid_index_pair {hybrid_index_pair} angle term was identified in old_term_collector as {old_term_collector[hybrid_index_pair]} but in the new_term_collector as {new_term_collector[hybrid_index_pair]}"
+
+            # Add the angle
             angle_term = (hybrid_index_pair[0],
                           hybrid_index_pair[1],
                           hybrid_index_pair[2],
                           rest_id + alch_id + [theta0_old, k_old, theta0_new, k_new])
             hybrid_angle_idx = custom_angle_force.addAngle(*angle_term)
 
+            # Add to dictionary for bookkeeping
             if atom_class == 'unique_old_atoms':
                 self._hybrid_to_old_angle_indices[hybrid_angle_idx] = old_angle_idx
             elif atom_class == 'core_atoms':
@@ -3403,30 +3422,55 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             elif atom_class == 'environment_atoms':
                 self._hybrid_to_environment_angle_indices[hybrid_angle_idx] = old_angle_idx
             else:
-                raise Exception(f"old angle index {old_angle_idx} cannot be a unique new angle index")
+                raise Exception(f"Old angle index {old_angle_idx} cannot be a unique new angle index")
 
         # Make a modified new_term_collector that omits the terms that are previously handled
         mod_new_term_collector = {key: val for key, val in new_term_collector.items() if key not in list(old_term_collector.keys())}
 
-        # Now iterate over the modified new term collector and add appropriate angles. These should only be unique new, right?
+        # Now iterate over the modified new term collector and add appropriate angles. These should only be unique new
         for hybrid_index_pair in mod_new_term_collector.keys():
+
+            # Given the atom indices, get rest and alchemical identifiers
             idx_set = set(list(hybrid_index_pair))
             rest_id = self.get_rest_identifier(idx_set)
             alch_id, atom_class = self.get_alch_identifier(idx_set)
-            assert atom_class == 'unique_new_atoms', f"we are iterating over modified new term collector, but the string identifier returned {atom_class}"
+            assert atom_class == 'unique_new_atoms', f"We are iterating over modified new term collector, but the angle returned is {atom_class}"
 
-            # These terms are unchanged if they are unique new terms. Preserve all valence terms
+            # Get the new terms
+            # Since these are unique new angles, the old terms will be unchanged
             new_angle_idx, theta0_new, k_new = mod_new_term_collector[hybrid_index_pair]
             theta0_old, k_old = theta0_new, k_new
 
+            # Add the angle
             angle_term = (hybrid_index_pair[0],
                           hybrid_index_pair[1],
                           hybrid_index_pair[2],
                           rest_id + alch_id + [theta0_old, k_old, theta0_new, k_new])
             hybrid_angle_idx = custom_angle_force.addAngle(*angle_term)
+
+            # Add to dictionary for bookkeeping
             self._hybrid_to_new_angle_indices[hybrid_angle_idx] = new_angle_idx
 
     def _is_torsion_equal(self, hybrid_index_pair_1, terms_1, hybrid_index_pair_2, terms_2):
+        """
+        Given two torsions (defined by hybrid indices and terms), return whether they are the same
+
+        Parameters
+        ----------
+        hybrid_index_pair_1 : list of ints
+            hybrid atom indices defining torsion 1
+        terms_1 : list of lists
+            each sublist contains torsion parameters torsion 1
+        hybrid_index_pair_2 : list of ints
+            hybrid atom indices defining torsion 2
+        terms_2 : list of lists
+            each sublist contains torsion parameters torsion 2
+
+        Returns
+        -------
+        bool
+            indicates whether the two torsions are equal
+        """
         if set(hybrid_index_pair_1) == set(hybrid_index_pair_2):
             terms_1 = np.array(terms_1)
             terms_2 = np.array(terms_2)
@@ -3462,7 +3506,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             #         _logger.info(f"hybrid_index_pair {hybrid_index_pair_old} was not found in the new_term_collector, but {hybrid_index_pair_new} has the same atoms and terms, so {hybrid_index_pair_new} will be removed from the new term collector")
             #         return hybrid_index_pair_new
             if self._is_torsion_equal(hybrid_index_pair_new, new_terms, hybrid_index_pair_old, old_terms):
-                _logger.info(f"hybrid_index_pair {hybrid_index_pair_old} was not found in the new_term_collector, but {hybrid_index_pair_new} has the same atoms and terms, so {hybrid_index_pair_new} will be removed from the new term collector")
+                _logger.info(f"Hybrid_index_pair {hybrid_index_pair_old} was not found in the new_term_collector, but {hybrid_index_pair_new} has the same atoms and terms, so {hybrid_index_pair_new} will be removed from the new term collector")
                 return hybrid_index_pair_new
         _logger.info(f"No matching key in new_term_collector was found for hybrid_index_pair {hybrid_index_pair_old}!")
         return None
@@ -3471,7 +3515,17 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         """
         Handle the periodic torsions -- transcribe the old/new system `PeriodicTorsionForce` to the hybrid system's `CustomTorsionForce`.
 
-        TODO : add equivalent `environment` check for torsions...this is a bit tricky since a unique 4-tuple might have multiple torsions (or backward)
+        Note that here, adding the torsions to the force is done differently from how bonds/angles are added. Since (improper) torsions can be
+        in different atom orders, we will:
+        - Iterate over the old system torsions,
+            - Unique old torsions -- use old terms for periodicity_old, theta_old, K_old and zero the old terms for periodicity_new, theta_new, K_new
+            - Core torsions -- same as above
+            - Environment torsions -- use old terms for periodicity_old, theta_old, K_old, periodicity_new, theta_new, K_new
+        - Remove environment torsions from the new system torsions
+        - Iterate over the new terms
+            - Unique new torsions -- use new terms for periodicity_new, theta_new, K_new and zero the new terms for periodicity_old, theta_old, K_old
+            - Core torsions -- same as above
+
         """
 
         # Define the custom expression
@@ -3534,23 +3588,24 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         for term_idx in range(old_system_torsion_force.getNumTorsions()):
             p1, p2, p3, p4, periodicity, phase, k = old_system_torsion_force.getTorsionParameters(term_idx) # Grab the parameters
             hybrid_p1, hybrid_p2, hybrid_p3, hybrid_p4 = self._old_to_hybrid_map[p1], self._old_to_hybrid_map[p2], self._old_to_hybrid_map[p3], self._old_to_hybrid_map[p4] # Make hybrid indices
-            sorted_list = tuple([hybrid_p1, hybrid_p2, hybrid_p3, hybrid_p4]) if hybrid_p1 < hybrid_p4 else tuple([hybrid_p4, hybrid_p3, hybrid_p2, hybrid_p1])
-            if sorted_list in old_term_collector.keys():
+            sorted_indices = tuple([hybrid_p1, hybrid_p2, hybrid_p3, hybrid_p4]) if hybrid_p1 < hybrid_p4 else tuple([hybrid_p4, hybrid_p3, hybrid_p2, hybrid_p1])
+            if sorted_indices in old_term_collector.keys():
                 # It _is_ the case that some torsions have the same particle indices...
-                old_term_collector[sorted_list].append([term_idx, periodicity, phase, k])
+                old_term_collector[sorted_indices].append([term_idx, periodicity, phase, k])
             else:
                 # Make this a nested list to hold multiple terms
-                old_term_collector[sorted_list] = [[term_idx, periodicity, phase, k]]
+                old_term_collector[sorted_indices] = [[term_idx, periodicity, phase, k]]
 
         # Repeat for the new system torsion force
         for term_idx in range(new_system_torsion_force.getNumTorsions()):
             p1, p2, p3, p4, periodicity, phase, k = new_system_torsion_force.getTorsionParameters(term_idx) # Grab the parameters
             hybrid_p1, hybrid_p2, hybrid_p3, hybrid_p4 = self._new_to_hybrid_map[p1], self._new_to_hybrid_map[p2], self._new_to_hybrid_map[p3], self._new_to_hybrid_map[p4] #make hybrid indices
-            sorted_list = tuple([hybrid_p1, hybrid_p2, hybrid_p3, hybrid_p4]) if hybrid_p1 < hybrid_p4 else tuple([hybrid_p4, hybrid_p3, hybrid_p2, hybrid_p1])
-            if sorted_list in new_term_collector.keys():
-                new_term_collector[sorted_list].append([term_idx, periodicity, phase, k])
+            sorted_indices = tuple([hybrid_p1, hybrid_p2, hybrid_p3, hybrid_p4]) if hybrid_p1 < hybrid_p4 else tuple([hybrid_p4, hybrid_p3, hybrid_p2, hybrid_p1])
+            if sorted_indices in new_term_collector.keys():
+                new_term_collector[sorted_indices].append([term_idx, periodicity, phase, k])
             else:
-                new_term_collector[sorted_list] = [[term_idx, periodicity, phase, k]]
+                new_term_collector[sorted_indices] = [[term_idx, periodicity, phase, k]]
+        mod_new_term_collector = {key: val for key, val in new_term_collector.items()}
 
         # Build generator for debugging purposes
         self._hybrid_to_old_torsion_indices = {}
@@ -3559,19 +3614,19 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         self._hybrid_to_environment_torsion_indices = {}
 
         # Iterate over the old_term_collector and add appropriate torsions
-        mod_new_term_collector = {key: val for key, val in new_term_collector.items()}
         for hybrid_index_pair in old_term_collector.keys():
+
+            # Given the atom indices, get rest and alchemical identifiers
             idx_set = set(list(hybrid_index_pair))
             rest_id = self.get_rest_identifier(idx_set)
             alch_id, atom_class = self.get_alch_identifier(idx_set)
-            is_env = False
-            if alch_id[0] == 1: #if the first entry in the alchemical id is 1, that means it is env, so the new/old terms must be identical?
-                # TODO : write a test for this...
-                # It must be the case that the list of old terms must be equal to the list of new terms
-                assert self._is_torsion_equal(hybrid_index_pair, old_term_collector[hybrid_index_pair], hybrid_index_pair, new_term_collector[hybrid_index_pair]), f"hybrid_index_pair {hybrid_index_pair} torsion term was identified in old_term_collector as {old_term_collector[hybrid_index_pair]} but in the new_term_collector as {new_term_collector[hybrid_index_pair]}"
-                is_env = True
-            for counter, torsion_term in enumerate(old_term_collector[hybrid_index_pair]):
+
+            for torsion_term in old_term_collector[hybrid_index_pair]:
+
+                # Get old terms
                 old_torsion_idx, periodicity_old, phase_old, k_old = torsion_term
+
+                # Add torsion
                 torsion_term = (hybrid_index_pair[0],
                               hybrid_index_pair[1],
                               hybrid_index_pair[2],
@@ -3579,12 +3634,12 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                               rest_id + alch_id + [periodicity_old,
                                                     phase_old,
                                                     k_old,
-                                                    periodicity_old,
-                                                    phase_old,
-                                                    k_old])
-
+                                                    periodicity_old * 0,
+                                                    phase_old * 0,
+                                                    k_old * 0])
                 hybrid_torsion_idx = custom_torsion_force.addTorsion(*torsion_term)
 
+                # Add to dictionary for bookkeeping
                 if atom_class == 'unique_old_atoms':
                     self._hybrid_to_old_torsion_indices[hybrid_torsion_idx] = old_torsion_idx
                 elif atom_class == 'core_atoms':
@@ -3592,40 +3647,55 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                 elif atom_class == 'environment_atoms':
                     self._hybrid_to_environment_torsion_indices[hybrid_torsion_idx] = old_torsion_idx
                 else:
-                    raise Exception(f"old torsion index {old_torsion_idx} cannot be a unique new torsion index")
+                    raise Exception(f"Old torsion index {old_torsion_idx} cannot be a unique new torsion index")
 
-            if is_env: # Remove the entry in the new term
-                if hybrid_index_pair not in mod_new_term_collector: # If the hybrid_index_pair is not in the new term collector, check to see if its in a different order in the new term collector
-                    hybrid_index_pair = self._find_torsion_match(hybrid_index_pair, old_term_collector[hybrid_index_pair], new_term_collector)
+            if atom_class == 'environment':
+
+                # Check that the list of old terms is equal to the list of new terms
+                assert self._is_torsion_equal(hybrid_index_pair,
+                                              old_term_collector[hybrid_index_pair],
+                                              hybrid_index_pair,
+                                              new_term_collector[hybrid_index_pair]), \
+                    f"hybrid_index_pair {hybrid_index_pair} torsion term was identified in old_term_collector as {old_term_collector[hybrid_index_pair]} but in the new_term_collector as {new_term_collector[hybrid_index_pair]}"
+
+                # Remove the entry in the new term collector
+                if hybrid_index_pair not in mod_new_term_collector:  # If the hybrid_index_pair is not in the mod_new_term_collector, check to see if its there in a different order
+                    hybrid_index_pair = self._find_torsion_match(hybrid_index_pair,
+                                                                 old_term_collector[hybrid_index_pair],
+                                                                 mod_new_term_collector)
                 if hybrid_index_pair: # If hybrid_index_pair is None, do not add it to the dictionary
                     mod_new_term_collector[hybrid_index_pair] = [] # Setting this to an empty list is sufficient (the key doesn't need to be popped) because the torsion terms are added by iterating over the list
 
         # Now iterate over the modified new term collector and add appropriate torsions. These should only be unique new or core, right?
         for hybrid_index_pair in mod_new_term_collector.keys():
+
+            # Given the atom indices, get rest and alchemical identifiers
             idx_set = set(list(hybrid_index_pair))
             rest_id = self.get_rest_identifier(idx_set)
             alch_id, atom_class = self.get_alch_identifier(idx_set)
+            assert atom_class in ['unique_new_atoms', 'core_atoms'], f"We are iterating over modified new term collector, but the torsion returned is {atom_class}"
 
-            # These terms are unchanged if they are unique new terms. Preserve all valence terms
-            for counter, torsion_term in enumerate(mod_new_term_collector[hybrid_index_pair]):
-                assert atom_class in ['unique_new_atoms', 'core_atoms'], f"we are iterating over modified new term collector, but the string identifier returned {atom_class}"
+            for torsion_term in mod_new_term_collector[hybrid_index_pair]:
+
+                # Get new term
                 new_torsion_idx, periodicity_new, phase_new, k_new = torsion_term
 
+                # Add torsion
                 torsion_term = (hybrid_index_pair[0],
                               hybrid_index_pair[1],
                               hybrid_index_pair[2],
                               hybrid_index_pair[3],
-                              rest_id + alch_id + [periodicity_new,
-                                                    phase_new,
-                                                    k_new,
+                              rest_id + alch_id + [periodicity_new * 0,
+                                                    phase_new * 0,
+                                                    k_new * 0,
                                                     periodicity_new,
                                                     phase_new,
                                                     k_new])
-
                 hybrid_torsion_idx = custom_torsion_force.addTorsion(*torsion_term)
+
+                # Add to dictionary for bookkeeping
                 if atom_class == 'unique_new_atoms':
                     self._hybrid_to_new_torsion_indices[hybrid_torsion_idx] = new_torsion_idx
-
 
     def _transcribe_nonbondeds(self):
         """
