@@ -3537,8 +3537,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         # Define U (with alchemical scaling)
         torsion_expression += "U = is_unique_old * U_old_scaled " \
                               "+ is_unique_new * U_new_scaled " \
-                              "+ is_core * U_old_scaled * U_new_scaled " \
-                              "+ is_environment * U_old_scaled * U_new_scaled;"
+                              "+ is_core * (U_old_scaled + U_new_scaled) " \
+                              "+ is_environment (U_old_scaled + U_new_scaled);"
         torsion_expression += 'U_old_scaled = (K_old * (1 + cos(periodicity_old * theta - phase_old))) * lambda_alchemical_torsions_old;'
         torsion_expression += 'U_new_scaled = (K_new * (1 + cos(periodicity_new * theta - phase_new))) * lambda_alchemical_torsions_new;'
 
