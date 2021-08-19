@@ -2805,7 +2805,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         "U_electrostatics * electrostatics_rest_scale + U_sterics * sterics_rest_scale;",
 
         # Define rest scale
-        "electrostsatics_rest_scale = is_rest * lambda_rest_electrostatics_exceptions * lambda_rest_electrostatics_exceptions + is_inter * lambda_rest_electrostatics_exceptions + is_nonrest;",
+        "electrostatics_rest_scale = is_rest * lambda_rest_electrostatics_exceptions * lambda_rest_electrostatics_exceptions + is_inter * lambda_rest_electrostatics_exceptions + is_nonrest;",
         "sterics = is_rest * lambda_rest_sterics_exceptions * lambda_rest_sterics_exceptions + is_inter * lambda_rest_sterics_exceptions + is_nonrest;",
 
         # Define electrostatics functional form
