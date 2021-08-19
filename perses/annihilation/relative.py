@@ -3474,14 +3474,14 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         """
 
         # Define the custom expression
-        torsion_expression = "rest_scale * (lambda_alchemical_torsions_old * U1 + lambda_alchemical_torsions_new * U2);"
+        torsion_expression = "rest_scale * (lambda_alchemical_torsions_old * U_old + lambda_alchemical_torsions_new * U_new);"
         torsion_expression += "rest_scale = is_rest * lambda_rest_torsions * lambda_rest_torsions " \
                               "+ is_inter * lambda_rest_torsions " \
                               "+ is_nonrest;"
 
         # Define U1 and U2
-        torsion_expression += 'U1 = K1 * (1 + cos(periodicity1 * theta - phase1));'
-        torsion_expression += 'U2 = K2 * (1 + cos(periodicity2 * theta - phase2));'
+        torsion_expression += 'U_old = K_old * (1 + cos(periodicity_old * theta - phase_old));'
+        torsion_expression += 'U_new = K_new * (1 + cos(periodicity_new * theta - phase_new));'
 
         # Create custom force
         custom_torsion_force = openmm.CustomTorsionForce(torsion_expression)
