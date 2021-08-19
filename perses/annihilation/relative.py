@@ -3621,7 +3621,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             rest_id = self.get_rest_identifier(idx_set)
             alch_id, atom_class = self.get_alch_identifier(idx_set)
 
-            if atom_class == 'environment':
+            if atom_class == 'environment_atoms':
                 # Check that the list of old terms is equal to the list of new terms
                 assert self._is_torsion_equal(hybrid_index_pair,
                                               old_term_collector[hybrid_index_pair],
