@@ -3871,7 +3871,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                 custom_exception_force.addBond(*params)
 
         self._hybrid_system.addForce(custom_nb_force)
-        self._hybrid_system.addForce(exception_force)
+        self._hybrid_system.addForce(custom_exception_force)
 
     def _get_custom_nonbonded_force(self, is_exception=False):
         """
