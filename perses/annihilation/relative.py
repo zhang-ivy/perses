@@ -2669,7 +2669,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
     - CustomBondForce - direct space nonbonded exceptions
     - NonbondedForce - reciprocal space nonbonded interactions/exceptions
 
-    For the custom forces:
+    For the custom nonbonded/bond forces:
     TODO: add details about defining the functional form for the custom nonbonded/bond forces
 
     The global parameters are defined similarly to how they are defined for the valence forces, except there are separate
@@ -2688,6 +2688,9 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
     However, the unique old/new atoms are 'lifted' into the 4th dimension 'w' upon 'alchemification' and the length of the 4th dimension is
     given by r_cutoff * w_scale. w_scale is a user-defined scalar between 0 (non-inclusive) and 1. Taking 'w_scale' to 1
     means that once the term is maximally 'lifted' into the 4th dimension, the 4th dimension is effectively of length 'r_cutoff'.
+
+    For the standard NonbondedForce, global parameters (to be used with particle parameter offsets) are defined to allow
+    for alchemical scaling, but not rest scaling. Computation of contributions from the direct space is disabled.
 
     Parameters
     ----------
