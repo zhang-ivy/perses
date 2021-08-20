@@ -2644,10 +2644,49 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         - 4th dimension softcore
     with custom forces. Supports one alchemical region and one REST region.
 
+    Bonds, angles, and torsions are handled using custom forces.
+    Each custom force has 3 global lambda parameters:
+    - lambda_rest_{name_of_valence_force} - this is sqrt(beta/beta0)
+    - lambda_alchemical_{name_of_valence_force}_old - this goes from 1 to 0 (on to off)
+    - lambda_alchemical_{name_of_valence_force}_new - this goes from 0 to 1 (off to on)
+    The alchemical lambdas are separated into old and new for further controllability when troubleshooting difficult transformations.
+
+    Each custom force has per bond/angle/torsion parameters that classify how the bond/angle/torsion should be scaled
+    by rest and alchemically:
+    - is_rest - indicates whether the bond/angle/torsion is in the rest region (1), otherwise 0
+    - is_inter - indicates whether the bond/angle/torsion straddles the rest region (1), otherwise 0
+    - is_nonrest - indicates whether the bond/angle/torsion is outside the rest region (1), otherwise 0
+    - is_environment - indicates whether the bond/angle/torsion is considered environment (1), otherwise 0
+    - is_core - indicates whether the bond/angle/torsion is considered core (1), otherwise 0
+    - is_unique_old - indicates whether the bond/angle/torsion is considered unique old (1), otherwise 0
+    - is_unique_new - indicates whether the bond/angle/torsion is considered unique new(1), otherwise 0
+
+    Each custom force also has old and new per bond/angle/torsion parameters necessary for computing the energy.
+    For example, for each bond, the additional parameters are: length_old, K_old, length_new, K_new
+
+    The nonbonded interactions are handled with 3 forces:
+    - CustomNonbondedForce - direct space nonbonded interactions
+    - CustomBondForce - direct space nonbonded exceptions
+    - NonbondedForce - reciprocal space nonbonded interactions/exceptions
+
+    For the custom forces:
+    TODO: add details about defining the functional form for the custom nonbonded/bond forces
+
+    The global parameters are defined similarly to how they are defined for the valence forces, except there are separate
+    global lambdas for electrostatics and sterics to allow for more controllability when troubleshooting difficult transformations.
+
+    The per particle/bond parameters are defined as described above for the valence forces, except for the per particle
+    parameters in the CustomNonbondedForce related to rest:
+    - is_rest - indicates whether the atom is in the rest region (1), otherwise 0
+    - is_nonrest_solute - indicates whether the atom is outside the rest region and is solute (1), otherwise 0
+    - is_nonrest_solvent - indicates whether the atom is outside the rest region and is solvent (1), otherwise 0
+    These per particle parameters are defined to allow for scaling of rest-solvent interactions by beta/beta0, if desired. 
+    If the scaling of rest-solvent interactions is desired, the functional form will need to be changed.
+
     In order to avoid singularities in the alchemical region (specifically in interactions of unique new/old atoms),
     we introduce a decoupling in the 4th dimensional distance. Decoupling does not affect core or env atoms.
     However, the unique old/new atoms are 'lifted' into the 4th dimension 'w' upon 'alchemification' and the length of the 4th dimension is
-    given by r_cutoff * w_scale. w_scale is a user-defined scalar between 0 (non-inclusive) and 1. taking 'w_scale' to 1
+    given by r_cutoff * w_scale. w_scale is a user-defined scalar between 0 (non-inclusive) and 1. Taking 'w_scale' to 1
     means that once the term is maximally 'lifted' into the 4th dimension, the 4th dimension is effectively of length 'r_cutoff'.
 
     Parameters
@@ -2778,8 +2817,10 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         "p2_sterics_rest_scale = is_rest2 * lambda_rest_sterics;",
 
         # Define rest scale factors (scaled water rest)
-        # "p1_rest_scale = select(1 - is_both_solvent, is_rest1 * lambda_rest_scale + is_nonrest_solute1 + is_nonrest_solvent1 * lambda_rest_scale, 1);",
-        # "p2_rest_scale = select(1 - is_both_solvent, is_rest2 * lambda_rest_scale + is_nonrest_solute2 + is_nonrest_solvent2 * lambda_rest_scale, 1);",
+        # "p1_electrostatics_rest_scale = select(1 - is_both_solvent, is_rest1 * lambda_electrostatics_rest + is_nonrest_solute1 + is_nonrest_solvent1 * lambda_electrostatics_rest, 1);",
+        # "p2_electrostatics_rest_scale = select(1 - is_both_solvent, is_rest2 * lambda_electrostatics_rest_ + is_nonrest_solute2 + is_nonrest_solvent2 * lambda_electrostatics_rest, 1);",
+        # "p1_sterics_rest_scale = select(1 - is_both_solvent, is_rest1 * lambda_sterics_rest + is_nonrest_solute1 + is_nonrest_solvent1 * lambda_sterics_rest, 1);",
+        # "p2_sterics_rest_scale = select(1 - is_both_solvent, is_rest2 * lambda_sterics_rest_ + is_nonrest_solute2 + is_nonrest_solvent2 * lambda_sterics_rest, 1);",
         # "is_both_solvent = is_nonrest_solvent1 * is_nonrest_solvent2;",
 
         # Define alpha
@@ -2834,7 +2875,6 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         "alpha = sqrt(-log(2 * delta) / r_cutoff);",
         "delta = {delta};",
 
-
         # Define r_eff
         "r_eff_electrostatics = sqrt(r^2 + w_electrostatics^2);",
         "r_eff_sterics = sqrt(r^2 + w_sterics^2);",
@@ -2846,7 +2886,6 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         "r_cutoff = {r_cutoff};"
 
     ]
-
 
     _default_nonbonded_expression = ' '.join(_default_nonbonded_expression_list)
     _default_exception_expression = ' '.join(_default_exception_expression_list)
@@ -2983,7 +3022,8 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         self._transcribe_torsions()
 
         if 'NonbondedForce' in self._old_system_forces or 'NonbondedForce' in self._new_system_forces:
-            self._transcribe_nonbondeds()
+            self._transcribe_nonbondeds_direct_space()
+            self._transcribe_nonbondeds_reciprocal_space()
 
     def _build_hybrid_particles(self):
         """
@@ -3499,12 +3539,6 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             hybrid atom indices for matching torsion in the new force (or None, if it doesn't exist)
         """
         for hybrid_index_pair_new, new_terms in new_term_collector.items():
-            # if set(hybrid_index_pair_new) == set(hybrid_index_pair_old):
-            #     new_terms = np.array(new_terms)
-            #     old_terms = np.array(old_terms)
-            #     if np.array_equal(new_terms[:,1:], old_terms[:,1:]):
-            #         _logger.info(f"hybrid_index_pair {hybrid_index_pair_old} was not found in the new_term_collector, but {hybrid_index_pair_new} has the same atoms and terms, so {hybrid_index_pair_new} will be removed from the new term collector")
-            #         return hybrid_index_pair_new
             if self._is_torsion_equal(hybrid_index_pair_new, new_terms, hybrid_index_pair_old, old_terms):
                 _logger.info(f"Hybrid_index_pair {hybrid_index_pair_old} was not found in the new_term_collector, but {hybrid_index_pair_new} has the same atoms and terms, so {hybrid_index_pair_new} will be removed from the new term collector")
                 return hybrid_index_pair_new
@@ -3702,9 +3736,10 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                 if atom_class == 'unique_new_atoms':
                     self._hybrid_to_new_torsion_indices[hybrid_torsion_idx] = new_torsion_idx
 
-    def _transcribe_nonbondeds(self):
+    def _transcribe_nonbondeds_direct_space(self):
         """
         Add particles to each of the custom forces for nonbonded interactions and exceptions.
+        These only account for the direct space, not the reciprocal space.
 
         """
 
@@ -3713,7 +3748,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         new_system_nbf = self._new_system_forces['NonbondedForce']
 
         # Define custom nb force
-        custom_nb_force = self._get_nonbonded_force()
+        custom_nb_force = self._get_custom_nonbonded_force()
 
         # Iterate over particles in the old system and add them to the custom nonbonded force
         done_indices = []
@@ -3763,7 +3798,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                 custom_nb_force.addExclusion(new, old)
 
         # Define custom bond force for exceptions
-        exception_force = self._get_nonbonded_force(is_exception=True)
+        custom_exception_force = self._get_custom_nonbonded_force(is_exception=True)
 
         # Now add add all nonzeroed exceptions to custom bond force
         old_term_collector = {}
@@ -3810,7 +3845,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             if all([v.value_in_unit_system(unit.md_unit_system) == 0.0 for v in (chargeProd_old, chargeProd_new, epsilon_old, epsilon_new)]):
                 pass
             else:
-                exception_force.addBond(*params)
+                custom_exception_force.addBond(*params)
 
         # Make a modified new_term_collector that omits the terms that are previously handled
         mod_new_term_collector = {key: val for key, val in new_term_collector.items() if
@@ -3833,12 +3868,12 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             if all([v.value_in_unit_system(unit.md_unit_system) == 0.0 for v in (chargeProd_new, epsilon_new)]):
                 pass
             else:
-                exception_force.addBond(*params)
+                custom_exception_force.addBond(*params)
 
         self._hybrid_system.addForce(custom_nb_force)
         self._hybrid_system.addForce(exception_force)
 
-    def _get_nonbonded_force(self, is_exception=False):
+    def _get_custom_nonbonded_force(self, is_exception=False):
         """
         Write custom nonbonded or exceptions force.
 
@@ -3853,7 +3888,6 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
         # Create the force
         if not is_exception:
-
             expression = self._default_nonbonded_expression
             formatted_expression = expression.format(w_scale=self._w_scale,
                                                      r_cutoff=self._r_cutoff.value_in_unit_system(unit.md_unit_system),
@@ -3870,7 +3904,6 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             suffix = '_exceptions'
 
         # Add global parameters
-
         custom_force.addGlobalParameter(f"lambda_rest_electrostatics{suffix}", 1.0)
         custom_force.addGlobalParameter(f"lambda_rest_sterics{suffix}", 1.0)
         custom_force.addGlobalParameter(f"lambda_alchemical_electrostatics{suffix}_old", 1.0)
@@ -3897,7 +3930,6 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             custom_force.addPerParticleParameter('charge_new')
             custom_force.addPerParticleParameter('sigma_new')
             custom_force.addPerParticleParameter('epsilon_new')
-
 
         else:
             # Add per-bond parameters for rest scaling -- these sets are disjoint
@@ -3942,3 +3974,233 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             raise Exception(f"nonbonded method is not recognized")
 
         return custom_force
+
+    def _transcribe_nonbondeds_reciprocal_space(self):
+        """
+        Add particles to a standard NonbondedForce for reciprocal space nonbonded interactions and exceptions.
+
+        """
+
+        # Retrieve old and new nb forces
+        old_system_nbf = self._old_system_forces['NonbondedForce']
+        new_system_nbf = self._new_system_forces['NonbondedForce']
+
+        # Retrieve atom index maps from hybrid to old/new
+        hybrid_to_old_map = self._hybrid_to_old_map
+        hybrid_to_new_map = self._hybrid_to_new_map
+
+        # Retrieve atom classes
+        atom_classes = self._atom_classes
+
+        # Define standard nonbonded force force
+        standard_nonbonded_force = self._get_nonbonded_force()
+
+        # Iterate over the particles in the hybrid system, because nonbonded force does not accept index
+        for particle_index in range(self._hybrid_system.getNumParticles()):
+
+            if particle_index in atom_classes['unique_old_atoms']:
+                # Get the parameters in the old system
+                old_index = hybrid_to_old_map[particle_index]
+                charge, sigma, epsilon = old_system_nbf.getParticleParameters(old_index)
+
+                # Add particle to the standard nonbonded force
+                check_index = standard_nonbonded_force.addParticle(charge, sigma, epsilon)
+                assert (particle_index == check_index), "Attempting to add incorrect particle to hybrid system"
+
+                # Charge and epsilon will be turned on at lambda = 0 and turned off at lambda = 1
+                standard_nonbonded_force.addParticleParameterOffset('lambda_alchemical_electrostatics', particle_index, -charge, 0, 0)
+                standard_nonbonded_force.addParticleParameterOffset('lambda_alchemical_sterics', particle_index, 0, 0, -epsilon)
+
+            elif particle_index in atom_classes['unique_new_atoms']:
+                # Get the parameters in the new system
+                new_index = hybrid_to_new_map[particle_index]
+                charge, sigma, epsilon = new_system_nbf.getParticleParameters(new_index)
+
+                # Add particle to the standard nonbonded force
+                check_index = standard_nonbonded_force.addParticle(charge * 0, sigma, epsilon * 0 ) # charge and epsilon start at zero
+                assert (particle_index == check_index), "Attempting to add incorrect particle to hybrid system"
+
+                # Charge and epsilon will be turned off at lambda = 0 and turned on at lambda = 1
+                standard_nonbonded_force.addParticleParameterOffset('lambda_alchemical_electrostatics', particle_index, charge, 0, 0)
+                standard_nonbonded_force.addParticleParameterOffset('lambda_alchemical_sterics', particle_index, 0, 0, epsilon)
+
+            elif particle_index in atom_classes['core_atoms']:
+                # Get the parameters in the new and old systems:
+                old_index = hybrid_to_old_map[particle_index]
+                charge_old, sigma_old, epsilon_old = old_system_nbf.getParticleParameters(old_index)
+                new_index = hybrid_to_new_map[particle_index]
+                charge_new, sigma_new, epsilon_new = new_system_nbf.getParticleParameters(new_index)
+
+                # Add the particle to the standard nonbonded force
+                check_index = standard_nonbonded_force.addParticle(charge_old, 0.5 * (sigma_old + sigma_new), epsilon_old)
+                assert (particle_index == check_index), "Attempting to add incorrect particle to hybrid system"
+
+                # Charge is charge_old at lambda_electrostatics = 0, charge_new at lambda_electrostatics = 1
+                # TODO: We could also interpolate the Lennard-Jones here instead of core_sterics force so that core_sterics_force could just be softcore
+                # interpolate between old and new charge with lambda_electrostatics core; make sure to keep sterics off
+                standard_nonbonded_force.addParticleParameterOffset('lambda_alchemical_electrostatics', particle_index, (charge_new - charge_old), 0, 0)
+                standard_nonbonded_force.addParticleParameterOffset('lambda_alchemical_sterics', particle_index, 0, 0, (epsilon_new - epsilon_old))
+
+            # Otherwise, the particle is in the environment
+            else:
+                # The parameters will be the same in new and old system, so just take the old parameters
+                old_index = hybrid_to_old_map[particle_index]
+                charge, sigma, epsilon = old_system_nbf.getParticleParameters(old_index)
+
+                # Add the environment atoms to the stanard nonbonded force
+                standard_nonbonded_force.addParticle(charge, sigma, epsilon)
+
+        # Add exceptions for unique/old so that they never interact
+        for old in atom_classes['unique_old_atoms']:
+            for new in atom_classes['unique_new_atoms']:
+                standard_nonbonded_force.addException(old,
+                                                      new,
+                                                      0.0 * unit.elementary_charge ** 2,
+                                                      1.0 * unit.nanometers,
+                                                      0.0 * unit.kilojoules_per_mole)
+
+        # Iterate over the old system's exceptions and add them to standard nonbonded force:
+        for exception_pair, exception_parameters in self._old_system_exceptions.items():
+
+            index1_old, index2_old = exception_pair
+            chargeProd_old, sigma_old, epsilon_old = exception_parameters
+
+            # Get hybrid indices:
+            index1_hybrid = self._old_to_hybrid_map[index1_old]
+            index2_hybrid = self._old_to_hybrid_map[index2_old]
+            index_set = {index1_hybrid, index2_hybrid}
+
+            if index_set.issubset(atom_classes['environment_atoms']):
+                standard_nonbonded_force.addException(index1_hybrid, index2_hybrid, chargeProd_old, sigma_old, epsilon_old)
+
+            # Handle exceptions where at least one atom is unique old
+            elif len(index_set.intersection(atom_classes['unique_old_atoms'])) > 0:
+                if self._interpolate_14s:
+                    standard_nonbonded_force.addException(index1_hybrid, index2_hybrid, chargeProd_old*0.0, sigma_old, epsilon_old*0.0)
+                else:
+                    standard_nonbonded_force.addException(index1_hybrid, index2_hybrid, chargeProd_old, sigma_old, epsilon_old)
+
+            # If the exception particles are neither solely old unique, solely environment, nor contain any unique old atoms, they are either core/environment or core/core
+            # In this case, we need to get the parameters from the exception in the other (new) system, and interpolate between the two
+            else:
+                # First get the new indices.
+                index1_new = hybrid_to_new_map[index1_hybrid]
+                index2_new = hybrid_to_new_map[index2_hybrid]
+
+                # Get the exception parameters:
+                new_exception_parms = self._find_exception(new_system_nbf, index1_new, index2_new)
+
+                # If there's no new exception, then we should just set the exception parameters to be the nonbonded parameters
+                if not new_exception_parms:
+                    charge1_new, sigma1_new, epsilon1_new = new_system_nbf.getParticleParameters(index1_new)
+                    charge2_new, sigma2_new, epsilon2_new = new_system_nbf.getParticleParameters(index2_new)
+
+                    chargeProd_new = charge1_new * charge2_new
+                    sigma_new = 0.5 * (sigma1_new + sigma2_new)
+                    epsilon_new = unit.sqrt(epsilon1_new * epsilon2_new)
+                else:
+                    index1_new, index2_new, chargeProd_new, sigma_new, epsilon_new = new_exception_parms
+
+                # Interpolate between old and new
+                exception_index = standard_nonbonded_force.addException(index1_hybrid, index2_hybrid, chargeProd_old, sigma_old, epsilon_old)
+                standard_nonbonded_force.addExceptionParameterOffset('lambda_alchemical_electrostatics', exception_index, (chargeProd_new - chargeProd_old), 0, 0)
+                standard_nonbonded_force.addExceptionParameterOffset('lambda_alchemical_sterics', exception_index, 0, (sigma_new - sigma_old), (epsilon_new - epsilon_old))
+
+        # Now, loop through the new system to collect remaining interactions. The only that remain here are
+        # unique new - unique new, unique new - core, and unique new - environment. There might also be core-core, since not all
+        # core-core exceptions exist in both
+        for exception_pair, exception_parameters in self._new_system_exceptions.items():
+
+            index1_new, index2_new = exception_pair
+            chargeProd_new, sigma_new, epsilon_new = exception_parameters
+
+            # Get hybrid indices:
+            index1_hybrid = self._new_to_hybrid_map[index1_new]
+            index2_hybrid = self._new_to_hybrid_map[index2_new]
+            index_set = {index1_hybrid, index2_hybrid}
+
+            # Handle exceptions where at least one atom is unique new
+            if len(index_set.intersection(atom_classes['unique_new_atoms'])) > 0:
+                if self._interpolate_14s:
+                    standard_nonbonded_force.addException(index1_hybrid, index2_hybrid, chargeProd_new * 0.0, sigma_new, epsilon_new * 0.0)
+                else:
+                    standard_nonbonded_force.addException(index1_hybrid, index2_hybrid, chargeProd_new, sigma_new, epsilon_new)
+
+            # However, there may be a core exception that exists in one system but not the other (ring closure)
+            elif index_set.issubset(atom_classes['core_atoms']):
+                # Get the old indices
+                try:
+                    index1_old = self._topology_proposal.new_to_old_atom_map[index1_new]
+                    index2_old = self._topology_proposal.new_to_old_atom_map[index2_new]
+                except KeyError:
+                    continue
+
+                # See if it's also in the old nonbonded force. if it is, then we don't need to add it.
+                # But if it's not, we need to interpolate
+                if not self._find_exception(old_system_nonbonded_force, index1_old, index2_old):
+                    charge1_old, sigma1_old, epsilon1_old = old_system_nonbonded_force.getParticleParameters(index1_old)
+                    charge2_old, sigma2_old, epsilon2_old = old_system_nonbonded_force.getParticleParameters(index2_old)
+
+                    chargeProd_old = charge1_old * charge2_old
+                    sigma_old = 0.5 * (sigma1_old + sigma2_old)
+                    epsilon_old = unit.sqrt(epsilon1_old * epsilon2_old)
+
+                    exception_index = standard_nonbonded_force.addException(index1_hybrid, index2_hybrid, chargeProd_old, sigma_old, epsilon_old)
+                    standard_nonbonded_force.addExceptionParameterOffset('lambda_alchemical_electrostatics', exception_index, (chargeProd_new - chargeProd_old), 0, 0)
+                    standard_nonbonded_force.addExceptionParameterOffset('lambda_alchemical_sterics', exception_index, 0, (sigma_new - sigma_old), (epsilon_new - epsilon_old))
+
+        # Disable direct space interactions
+        standard_nonbonded_force.setIncludeDirectSpace(False)
+
+        # Copy NonbondedForce to hybrid system
+        self._hybrid_system.addForce(standard_nonbonded_force)
+
+    def _get_nonbonded_force(self):
+        """
+        Write standard NonbondedForce force.
+
+        """
+
+        # Create force
+        standard_nonbonded_force = openmm.NonbondedForce()
+
+        # Add global parameters
+        standard_nonbonded_force.addGlobalParameter("lambda_alchemical_electrostatics", 0.0)
+        standard_nonbonded_force.addGlobalParameter("lambda_alchemical_sterics", 0.0)
+
+        # Set nonbonded method and related attributes
+        old_system_nbf = self._old_system_forces['NonbondedForce']
+        standard_nonbonded_method = old_system_nbf.getNonbondedMethod()
+        standard_nonbonded_force.setNonbondedMethod(standard_nonbonded_method)
+        if standard_nonbonded_method in [openmm.NonbondedForce.CutoffPeriodic, openmm.NonbondedForce.CutoffNonPeriodic]:
+            epsilon_solvent = old_system_nbf.getReactionFieldDielectric()
+            r_cutoff = old_system_nbf.getCutoffDistance()
+            standard_nonbonded_force.setReactionFieldDielectric(epsilon_solvent)
+            standard_nonbonded_force.setCutoffDistance(r_cutoff)
+        elif standard_nonbonded_method in [openmm.NonbondedForce.PME, openmm.NonbondedForce.Ewald]:
+            [alpha_ewald, nx, ny, nz] = old_system_nbf.getPMEParameters()
+            delta = old_system_nbf.getEwaldErrorTolerance()
+            r_cutoff = old_system_nbf.getCutoffDistance()
+            standard_nonbonded_force.setPMEParameters(alpha_ewald, nx, ny, nz)
+            standard_nonbonded_force.setEwaldErrorTolerance(delta)
+            standard_nonbonded_force.setCutoffDistance(r_cutoff)
+        elif standard_nonbonded_method in [openmm.NonbondedForce.NoCutoff]:
+            pass
+        else:
+            raise Exception("Nonbonded method %s not supported yet." % str(self._nonbonded_method))
+
+        # Set the use of dispersion correction
+        if old_system_nbf.getUseDispersionCorrection():
+            standard_nonbonded_force.setUseDispersionCorrection(True)
+        else:
+            standard_nonbonded_force.setUseDispersionCorrection(False)
+
+        # Set the use of switching function
+        if old_system_nbf.getUseSwitchingFunction():
+            switching_distance = old_system_nbf.getSwitchingDistance()
+            standard_nonbonded_force.setUseSwitchingFunction(True)
+            standard_nonbonded_force.setSwitchingDistance(switching_distance)
+        else:
+            standard_nonbonded_force.setUseSwitchingFunction(False)
+
+        return standard_nonbonded_force
