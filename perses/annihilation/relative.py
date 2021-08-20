@@ -4139,9 +4139,9 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
 
                 # See if it's also in the old nonbonded force. if it is, then we don't need to add it.
                 # But if it's not, we need to interpolate
-                if not self._find_exception(old_system_nonbonded_force, index1_old, index2_old):
-                    charge1_old, sigma1_old, epsilon1_old = old_system_nonbonded_force.getParticleParameters(index1_old)
-                    charge2_old, sigma2_old, epsilon2_old = old_system_nonbonded_force.getParticleParameters(index2_old)
+                if not self._find_exception(old_system_nbf, index1_old, index2_old):
+                    charge1_old, sigma1_old, epsilon1_old = old_system_nbf.getParticleParameters(index1_old)
+                    charge2_old, sigma2_old, epsilon2_old = old_system_nbf.getParticleParameters(index2_old)
 
                     chargeProd_old = charge1_old * charge2_old
                     sigma_old = 0.5 * (sigma1_old + sigma2_old)
