@@ -2898,14 +2898,16 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
                  # rest scaling arguments
                  rest_region=None,
 
+                 # nonbonded parameters
                  r_cutoff=None,
                  w_scale=0.1,
                  delta=1e-4, # ewaldErrorTolerance
 
-                 use_dispersion_correction=False,
-
                  # generate htf for testing
                  generate_htf_for_testing=False,
+
+                 # whether to interpolate 14s
+                 interpolate_old_and_new_14s=False,
                  **kwargs):
 
         _logger.info("*** Generating RestCapablePMEHybridTopologyFactory ***")
@@ -2918,6 +2920,7 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
         self._hybrid_system_forces = dict()
         self._old_positions = current_positions
         self._new_positions = new_positions
+        self._interpolate_14s = interpolate_old_and_new_14s
 
         # Prepare dicts of forces, which will be useful later
         # TODO: Store this as self._system_forces[name], name in ('old', 'new', 'hybrid') for compactness
@@ -2936,7 +2939,6 @@ class RestCapablePMEHybridTopologyFactory(HybridTopologyFactory):
             self._r_cutoff = r_cutoff
         self._w_scale = w_scale
         self._delta = delta
-        self._use_dispersion_correction = use_dispersion_correction
 
         # Modify properties for testing:
         if generate_htf_for_testing:
